@@ -1,0 +1,42 @@
+# Only the website, its checks, and required copy sources belong in this repo.
+/*
+!/.gitignore
+!/README.md
+!/check.cjs
+!/site/
+!/Projekte/
+
+# Keep project originals local; retain only the copy used by check.cjs.
+/Projekte/**
+!/Projekte/*/
+!/Projekte/Improving Futurium/project-description-improving-futurium.md
+!/Projekte/DOXA/project-description-doxa-revised.md
+!/Projekte/VISIO TECHNOLOGICA/project-description-visio-technologica-revised.md
+!/Projekte/VEILED PANOPTICON/project-description-veiled-panopticon.md
+!/Projekte/Matrix Lamp/project-description-matrix-lamp.md
+!/Projekte/Carry the computation/project-description-carry-the-computation.md
+!/Projekte/Hyperreal Ravelord Kette 3D/project-description-hyperreal.md
+
+# Old web exports are kept locally but are not used by the current site.
+/site/assets/doxa-01.webp
+/site/assets/hyperreal-01.webp
+/site/assets/hyperreal-ravelord-textured.glb
+/site/assets/hyperreal-ravelord.glb
+/site/assets/matrix-lamp-02.webp
+/site/assets/matrix-lamp-03.webp
+/site/assets/matrix-lamp-04.webp
+/site/assets/matrix-lamp-studio-led-detail.webp
+/site/assets/matrix-lamp-studio-profile.webp
+/site/assets/me.glb
+/site/assets/visio-technologica-01.webp
+
+# Local settings, secrets, and generated files (at any depth).
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+node_modules/
+__pycache__/
+*.log
