@@ -28,7 +28,7 @@ The character’s likeness connects this question to the visitor personally: res
 
 I developed the technological framework that translated the team’s ideas into a demonstration. I used Meshy to generate characters from images, Mixamo to animate them, Blender to render the animations, and the holographic fan software to prepare and display the result.
 
-We developed the spatial concept together. Conrad created the spatial visualisations. Andreas Ingerl led the project, and Futurium provided the brief and received the final presentation.
+We developed the spatial concept together. Conrad Lischewsky created the spatial visualisations. Andreas Ingerl led the project, and Futurium provided the brief and received the final presentation.
 
 ## Process & key decisions
 
@@ -60,7 +60,7 @@ The project taught me how to translate a complex topic into an understandable in
 - **Critical Design:** Co-developed an exhibition concept questioning AI’s apparent objectivity and its capacity to carry biases and frame information.
 - **Interaction Design:** Co-developed the relationship between character creation, information stations, and an adjustable final conversation.
 - **Rapid Prototyping:** Created a technological framework for demonstrating the concept within five days.
-- **3D Visualization:** Generated characters with Meshy, animated them with Mixamo, and rendered their animations in Blender for fan display; Conrad created the spatial visualisations.
+- **3D Visualization:** Generated characters with Meshy, animated them with Mixamo, and rendered their animations in Blender for fan display; Conrad Lischewsky created the spatial visualisations.
 - **Spatial Storytelling:** Co-developed a spatial concept linking information stations with a personalised character and a final conversation.
 
 ### Connections through shared skills
@@ -71,7 +71,7 @@ The project taught me how to translate a complex topic into an understandable in
 
 ## Selected portfolio images
 
-Original files are preserved; the prototype uses reduced-size WebP copies. These images show visualisations of the proposed exhibition, rather than a completed museum installation. Spatial visualisations by Conrad.
+Original files are preserved; the prototype uses reduced-size WebP copies. These images show visualisations of the proposed exhibition, rather than a completed museum installation. Spatial visualisations by Conrad Lischewsky.
 
 - **hero:** `4if.jpg` — Exhibition walkthrough visualisation.
 - **network:** `3.jpg` — Proposed character selection station.

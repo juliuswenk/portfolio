@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Avatar export comparison</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<style>body{background:#111314;color:#efefeb;font:16px Arial;margin:32px}main{display:flex;gap:24px;flex-wrap:wrap}canvas{width:384px;height:460px;display:block}a,button{color:inherit;font:inherit}a{display:block;padding:16px}button{background:#303638;padding:12px;border:1px solid #888}</style>
+<h1>Avatar export comparison</h1><p>Same camera and lighting as the portfolio. Originals remain untouched.</p><button id="wave">Compare wave</button> <button id="mid-wave">Inspect mid-wave</button><main></main>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const players=[];
+for(const [name,file] of [['Original','waving-textured.glb'],['Compressed','avatar-web.glb']]){
+  const panel=document.createElement('section');panel.innerHTML=`<h2>${name}</h2>`;document.querySelector('main').append(panel);
+  const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});renderer.setSize(384,460);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;panel.append(renderer.domElement);
+  const scene=new THREE.Scene();scene.add(new THREE.AmbientLight(0xffffff,2));const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(2,3,5);scene.add(light);
+  const camera=new THREE.OrthographicCamera(-1,1,1.2,-1.2,.1,20);camera.position.set(0,0,5);camera.lookAt(0,0,0);
+  const gltf=await new GLTFLoader().loadAsync('../assets/'+file);const bounds=new THREE.Box3().setFromObject(gltf.scene),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());gltf.scene.position.copy(center).multiplyScalar(-1);const figure=new THREE.Group();figure.scale.setScalar(2.4/Math.max(size.x,size.y,size.z));figure.add(gltf.scene);scene.add(figure);
+  const mixer=new THREE.AnimationMixer(gltf.scene),wave=mixer.clipAction(gltf.animations[0]);wave.setLoop(THREE.LoopOnce,1);wave.clampWhenFinished=true;wave.play();mixer.update(0);wave.paused=true;renderer.render(scene,camera);
+  if(name==='Compressed'){const still=document.createElement('img');still.id='rendered-still';still.hidden=true;still.src=renderer.domElement.toDataURL();panel.append(still);}
+  const link=document.createElement('button');link.textContent='Save '+name+' still';link.onclick=()=>{const save=document.createElement('a');save.download=name.toLowerCase()+'-avatar.png';save.href=renderer.domElement.toDataURL();save.click();};panel.append(link);players.push({renderer,scene,camera,mixer,wave,duration:gltf.animations[0].duration});
+}
+document.querySelector('#mid-wave').onclick=()=>players.forEach(p=>{p.wave.reset().play();p.wave.paused=false;p.mixer.setTime(p.duration*.4);p.wave.paused=true;p.renderer.render(p.scene,p.camera);});
+let last=0;
+document.querySelector('#wave').onclick=()=>{players.forEach(p=>{p.wave.reset().play();p.wave.paused=false;});last=performance.now();requestAnimationFrame(frame);};
+function frame(now){const delta=(now-last)/1000;last=now;players.forEach(p=>{p.mixer.update(delta);p.renderer.render(p.scene,p.camera);});if(players.some(p=>!p.wave.paused))requestAnimationFrame(frame);}
+</script></html>

@@ -3,12 +3,20 @@
 !/.gitignore
 !/README.md
 !/check.cjs
+!/LOADING_PLAN.md
+!/EDITORIAL_PLAN.md
+!/EDITORIAL_COPY_DRAFT.md
+!/PROJECT_GUIDE.md
+!/AWWWARDS_IMPROVEMENT_PLAN.md
+!/AWWWARDS_AUDIT_2026-10-20.md
+!/DEPLOYMENT.md
 !/site/
 !/Projekte/
 
 # Keep project originals local; retain only the copy used by check.cjs.
 /Projekte/**
 !/Projekte/*/
+!/Projekte/*/portfolio-editorial.md
 !/Projekte/Improving Futurium/project-description-improving-futurium.md
 !/Projekte/DOXA/project-description-doxa-revised.md
 !/Projekte/VISIO TECHNOLOGICA/project-description-visio-technologica-revised.md
@@ -16,6 +24,8 @@
 !/Projekte/Matrix Lamp/project-description-matrix-lamp.md
 !/Projekte/Carry the computation/project-description-carry-the-computation.md
 !/Projekte/Hyperreal Ravelord Kette 3D/project-description-hyperreal.md
+!/Projekte/Hyperreal Ravelord Kette 3D/Web Export/
+!/Projekte/Hyperreal Ravelord Kette 3D/Web Export/VIDEO.md
 
 # Old web exports are kept locally but are not used by the current site.
 /site/assets/doxa-01.webp

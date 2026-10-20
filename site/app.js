@@ -4,49 +4,72 @@ const tau = Math.PI * 2;
 const projects = window.PORTFOLIO_PROJECTS.map((p,i,all)=>({...p,angle:i/all.length*tau}));
 const count=projects.length;
 const escapeHTML=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const picture=(photo,loading='lazy')=>`<img src="${escapeHTML(photo.src)}" alt="${escapeHTML(photo.title)}" width="${photo.width}" height="${photo.height}" loading="${loading}" decoding="async">`;
+const imageSizes={network:'(max-width:759px) 108px, 155px',preview:'88px',reading:'(min-width:1280px) 600px, (min-width:1000px) 50vw, 92vw'};
+function imageSource(photo,context){
+  if(context==='full')return `src="${escapeHTML(photo.src)}"`;
+  const available=window.PORTFOLIO_MEDIA?.[photo.src]||[{src:photo.src,width:photo.width}];
+  const small=available.filter(item=>item.width<=480);
+  const variants=['network','preview'].includes(context)&&small.length?small:available;
+  return `src="${escapeHTML(variants[0].src)}" srcset="${variants.map(item=>`${escapeHTML(item.src)} ${item.width}w`).join(', ')}" sizes="${imageSizes[context]}"`;
+}
+function picture(photo,context='reading',loading='lazy'){
+  const source=imageSource(photo,context);
+  return `<img ${['reading','preview'].includes(context)?source.replace(/(src|srcset|sizes)=/g,'data-$1='):source} data-original="${escapeHTML(photo.src)}" alt="${escapeHTML(photo.title)}" ${context==='reading'?`style="aspect-ratio:${photo.width}/${photo.height}"`: ""} width="${photo.width}" height="${photo.height}" loading="${loading}" decoding="async">`;
+}
 const caption=photo=>escapeHTML(photo.title)+(photo.credit?` <span class="credit">${escapeHTML(photo.credit)}</span>`:'');
 const sharedSkills=(a,b)=>a.skills.filter(skill=>b.skills.includes(skill));
 const connections=projects.flatMap((p,i)=>projects.slice(i+1).map((q,k)=>({a:i,b:i+k+1,skills:sharedSkills(p,q)}))).filter(edge=>edge.skills.length);
 const routeSkills=[...new Set(connections.flatMap(edge=>edge.skills))].sort();
 let selectedSkill='',previewProject=-1,previewTimer;
 $('#project-total').textContent=String(count).padStart(2,'0');
-$('#nodes').innerHTML=projects.map(p=>`<button class="node" data-project="${p.id}" aria-label="View ${escapeHTML(p.title)}"><span class="image">${picture(p.hero,'eager')}${p.hero.motion?`<video class="project-video-hero" data-webm="${escapeHTML(p.hero.motion.webm)}" data-hevc="${escapeHTML(p.hero.motion.hevc)}" data-frames="${p.hero.motion.frames}" data-fps="${p.hero.motion.fps}" muted playsinline preload="auto" aria-hidden="true"></video>`:''}</span><span class="label"><small>${String(p.id).padStart(2,'0')}</small>${escapeHTML(p.title)}</span></button>`).join('');
+$('#nodes').innerHTML=projects.map(p=>`<button class="node" data-project="${p.id}" aria-label="View ${escapeHTML(p.title)}"><span class="image">${picture(p.hero,'network','eager')}${p.hero.motion?`<video class="project-video-hero" data-webm="${escapeHTML(p.hero.motion.webm)}" data-hevc="${escapeHTML(p.hero.motion.hevc)}" data-frames="${p.hero.motion.frames}" data-fps="${p.hero.motion.fps}" muted playsinline preload="none" aria-hidden="true"></video>`:''}</span><span class="label"><small>${String(p.id).padStart(2,'0')}</small>${escapeHTML(p.title)}</span></button>`).join('');
 const prose=text=>text.split(/\n\s*\n/).map(paragraph=>`<p>${escapeHTML(paragraph).replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>').replace(/(^|[^\w])[_*]([^_*\n]+)[_*](?=\W|$)/g,'$1<em>$2</em>')}</p>`).join('');
-const facts=p=>[['Format',p.discipline],['Context',p.context],['My role',p.role],['Collaborators',p.collaborators]].filter(([,value])=>value).map(([label,value])=>`<div><dt>${label}</dt><dd>${escapeHTML(value)}</dd></div>`).join('');
 const galleryImages=p=>[...p.detailImages.map((photo,index)=>({photo,index,collection:'detailImages'})),...p.photos.map((photo,index)=>({photo,index,collection:'photos'})).filter(({photo})=>!p.detailImages.some(detail=>detail.src===photo.src))];
 function projectChapter(p) {
   const media=[], text=[];
-  const figure=(photo,collection,index,order,hero=false)=>`<figure data-reading-order="${order}" class="reading-figure${hero?' reading-hero':''}"><button class="detail-image${photo.motion?' turntable':''}" ${photo.motion?`data-project="${p.id}"`:`data-detail-project="${p.id-1}" data-detail-image="${index}" data-detail-collection="${collection}"`} aria-label="${photo.motion?'Rotate':'Enlarge'} ${escapeHTML(photo.title)}"><span class="image">${picture(photo)}</span></button><figcaption>${caption(photo)}</figcaption>${photo.motion?'<p class="media-hint">After one turn, move your pointer, drag, or use ← → to rotate.</p>':''}</figure>`;
+  const figure=(photo,collection,index,order,hero=false)=>`<figure data-reading-order="${order}"${photo.transparent?' data-transparent="true"':''} class="reading-figure${hero?' reading-hero':p.pairedMedia?.includes(collection+':'+index)?' reading-paired':''}"><button class="detail-image${photo.motion?' turntable':''}" ${photo.motion?`data-project="${p.id}"`:`data-detail-project="${p.id-1}" data-detail-image="${index}" data-detail-collection="${collection}"`} aria-label="${photo.motion?'Rotate':'Enlarge'} ${escapeHTML(photo.title)}"><span class="image" style="aspect-ratio:${photo.width}/${photo.height}">${picture(photo)}</span></button><figcaption>${caption(photo)}</figcaption>${photo.motion?'<button class="optional-load" data-load-turntable hidden>Load interactive view</button><p class="media-status" id="turntable-status" role="status"></p><p class="media-hint">After one turn, move your pointer, drag, or use ← → to rotate.</p>':''}</figure>`;
   media.push(figure(p.hero,'hero',0,0,true));
-  text.push(`<div class="project-introduction" data-reading-order="1"><p class="eyebrow">Selected work / ${String(p.id).padStart(2,'0')}</p><h2 id="title-${p.id}">${escapeHTML(p.title)}</h2><section class="project-section"><h3>At a glance</h3>${prose(p.atAGlance)}</section>${p.description?`<div class="project-description">${prose(p.description)}</div>`:`<div class="summary">${prose(p.summary)}</div>`}</div>`);
-  const narrative=p.caseStudy || [['Format & context',null],['Process',p.process]].filter(([,value],i)=>i===0||value).map(([title,value])=>({title,text:value}));
-  narrative.forEach((section,i)=>text.push(`<section class="project-section" data-reading-order="${10+i*10}"><h3>${escapeHTML(section.title)}</h3>${section.text?prose(section.text):`<dl class="project-meta">${facts(p)}</dl>`}</section>`));
+  text.push(`<div class="project-introduction" data-reading-order="1"><p class="eyebrow">Selected work / ${String(p.id).padStart(2,'0')}</p><h2 id="title-${p.id}">${escapeHTML(p.title)}</h2><section class="project-section"><h3>At a glance</h3>${prose(p.atAGlance)}</section><div class="project-context">${prose(p.context)}</div></div>`);
+  const narrative=p.caseStudy;
+  narrative.forEach((section,i)=>text.push(`<section class="project-section" data-reading-order="${10+i*10}">${section.expandable?`<details><summary>${escapeHTML(section.title)}</summary><div class="implementation-copy">${prose(section.text)}</div></details>`:`<h3>${escapeHTML(section.title)}</h3>${prose(section.text)}`}</section>`));
   galleryImages(p).forEach(({photo,index,collection},i)=>{
     const section=p.mediaSections?.[collection]?.[index] ?? Math.max(0,narrative.length-2);
     media.push(figure(photo,collection,index,15+section*10+i/100));
   });
-  if(p.video)media.push(`<figure class="reading-figure" data-reading-order="66"><div class="project-video"><iframe src="https://player.vimeo.com/video/${escapeHTML(p.video)}?dnt=1" title="${escapeHTML(p.title)} project film" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div><figcaption>${escapeHTML(p.title)} — project film</figcaption></figure>`);
+  if(p.video)media.push(`<figure class="reading-figure" data-reading-order="66"><div class="project-video"><iframe data-src="https://player.vimeo.com/video/${escapeHTML(p.video)}?dnt=1" title="${escapeHTML(p.title)} project film" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div><figcaption>${escapeHTML(p.title)} — project film</figcaption></figure>`);
   media.sort((a,b)=>Number(a.match(/data-reading-order="([^"]+)/)[1])-Number(b.match(/data-reading-order="([^"]+)/)[1]));
-  text.push(`<div class="project-extras" data-reading-order="1000"><h3 class="section-title">Skills</h3><div class="project-skills" aria-label="Skills in ${escapeHTML(p.title)}">${p.skills.map(skill=>routeSkills.includes(skill)?`<button class="skill-chip" data-skill="${escapeHTML(skill)}" aria-pressed="false">${escapeHTML(skill)}</button>`:`<span class="skill-chip">${escapeHTML(skill)}</span>`).join('')||'<p class="placeholder-note">Skills pending project description.</p>'}</div>${p.skillEvidence?`<div class="project-description">${prose(p.skillEvidence)}</div>`:''}${p.documentation?`<a class="project-next" href="${escapeHTML(p.documentation)}">Project documentation</a>`:''}<div class="related-projects" id="related-${p.id}"></div><a class="project-next" href="${p.id===count?'#overview':'#project-'+(p.id+1)}">${p.id===count?'Return to overview':'Next project'}</a></div>`);
-  return `<div class="network-passage" aria-hidden="true"></div><section class="chapter project-chapter" tabindex="-1" id="project-${p.id}" aria-labelledby="title-${p.id}"><article class="project-reading"><div class="reading-media">${media.join('')}</div><div class="reading-text">${text.join('')}</div></article></section>`;
+  text.push(`<div class="project-extras" data-reading-order="1000"><h3 class="section-title">Skills</h3><div class="project-skills" aria-label="Skills in ${escapeHTML(p.title)}">${p.skills.map(skill=>routeSkills.includes(skill)?`<button class="skill-chip" data-skill="${escapeHTML(skill)}" aria-pressed="false">${escapeHTML(skill)}</button>`:`<span class="skill-chip">${escapeHTML(skill)}</span>`).join('')}</div>${p.credits?`<div class="project-description project-credits">${prose(p.credits)}</div>`:''}${p.documentation?`<a class="project-next" href="${escapeHTML(p.documentation)}">Project documentation</a>`:''}<div class="related-projects" id="related-${p.id}"></div></div>`);
+  const onward=`<div class="project-onward" data-reading-order="2000"><a class="project-next" href="${p.id===count?'#overview':'#project-'+(p.id+1)}">${p.id===count?'Return to overview':'Next project'}</a></div>`;
+  return `<div class="network-passage" aria-hidden="true"></div><section class="chapter project-chapter" tabindex="-1" id="project-${p.id}" aria-labelledby="title-${p.id}"><article class="project-reading"><div class="reading-media">${media.join('')}</div><div class="reading-text">${text.join('')}</div>${onward}</article></section>`;
 }
 $('#chapters').innerHTML=projects.map(projectChapter).join('');
+function loadFrame(frame){if(frame.dataset.src){frame.src=frame.dataset.src;delete frame.dataset.src;}}
+const readingMedia=[...document.querySelectorAll('#chapters img,#chapters iframe')];
+if(typeof IntersectionObserver!=='undefined'){
+  const mediaObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{
+    if(!entry.isIntersecting)return;
+    if(entry.target.tagName==='IFRAME')loadFrame(entry.target);
+    else window.portfolioLoading?.hydrate(entry.target);
+    mediaObserver.unobserve(entry.target);
+  }),{rootMargin:'100% 0px'});
+  readingMedia.forEach(media=>mediaObserver.observe(media));
+}else readingMedia.forEach(media=>media.tagName==='IFRAME'?loadFrame(media):window.portfolioLoading?.hydrate(media));
+
 // Move the same elements at the breakpoint so visual and assistive reading order agree.
-const readingLayouts=[...document.querySelectorAll('.project-reading')].map(article=>{
+const readingLayouts=[...document.querySelectorAll('#chapters .project-reading')].map(article=>{
   const media=article.querySelector('.reading-media'),text=article.querySelector('.reading-text');
-  return {article,media,text,images:[...media.children],copy:[...text.children],stacked:false};
+  return {article,media,text,onward:article.querySelector('.project-onward'),images:[...media.children],copy:[...text.children],stacked:false};
 });
 function layoutReading() {
   const stacked=innerWidth<1000;
   readingLayouts.forEach(layout=>{
     if(layout.stacked===stacked)return;
     if(stacked){
-      [...layout.images,...layout.copy].sort((a,b)=>Number(a.dataset.readingOrder)-Number(b.dataset.readingOrder)).forEach(item=>layout.article.append(item));
+      [...layout.images,...layout.copy,layout.onward].sort((a,b)=>Number(a.dataset.readingOrder)-Number(b.dataset.readingOrder)).forEach(item=>layout.article.append(item));
       layout.media.remove();layout.text.remove();
     }else{
       layout.images.forEach(item=>layout.media.append(item));layout.copy.forEach(item=>layout.text.append(item));
-      layout.article.append(layout.media,layout.text);
+      layout.article.append(layout.media,layout.text,layout.onward);
     }
     layout.stacked=stacked;
   });
@@ -54,23 +77,66 @@ function layoutReading() {
 $('#project-index').innerHTML='<a href="#overview" aria-label="Network overview">○</a><a href="#about-section" aria-label="About me">●</a>'+projects.map(p=>`<a href="#project-${p.id}" aria-label="View ${escapeHTML(p.title)}">${String(p.id).padStart(2,'0')}</a>`).join('');
 const cards=[...document.querySelectorAll('.node')],chapters=[...document.querySelectorAll('#chapters .chapter')],aboutChapter=$('#about-section'),chapterSections=[aboutChapter,...chapters],links=[...$('#project-index').children];
 history.scrollRestoration='manual';
+let pendingNavigation=null;
+function cancelNavigation(){pendingNavigation=null;}
+function settleNavigation(){
+  if(!pendingNavigation)return;
+  const target=$(pendingNavigation.hash);if(!target){cancelNavigation();return;}
+  const top=Math.max(0,target.getBoundingClientRect().top+scrollY-(pendingNavigation.hash==='#overview'?0:16));
+  if(Math.abs(top-scrollY)>.5)window.scrollTo({top,behavior:'instant'});
+  history.replaceState({portfolioScroll:scrollY},'');
+}
 function goTo(hash){
   const target=$(hash);if(!target)return;
   history.replaceState({portfolioScroll:scrollY},'');
   if(location.hash!==hash)history.pushState(null,'',hash);
-  target.scrollIntoView({behavior:'instant',block:'start'});target.focus?.({preventScroll:true});
-  history.replaceState({portfolioScroll:scrollY},'');draw();
+  const navigation={hash};pendingNavigation=navigation;
+  window.portfolioLoading?.hydrate(target.querySelector('.reading-hero img'));
+  resize();target.focus?.({preventScroll:true});
+  history.replaceState({portfolioScroll:scrollY},'');
+  const finish=()=>requestAnimationFrame(()=>{
+    if(pendingNavigation!==navigation)return;
+    resize();
+    requestAnimationFrame(()=>{
+      if(pendingNavigation!==navigation)return;
+      resize();pendingNavigation=null;
+    });
+  });
+  const hero=target.querySelector('.reading-hero img');
+  if(hero&&!hero.complete){hero.addEventListener('load',finish,{once:true});hero.addEventListener('error',finish,{once:true});}
+  else finish();
 }
+// Layout may settle after navigation; real user input ends destination correction.
+['wheel','touchstart','pointerdown','keydown'].forEach(name=>addEventListener(name,cancelNavigation,{passive:true}));
 addEventListener('popstate',event=>{
+  cancelNavigation();
   if(Number.isFinite(event.state?.portfolioScroll))window.scrollTo({top:event.state.portfolioScroll,behavior:'instant'});
-  else if(/^#(?:overview|about-section|project-\d+)$/.test(location.hash))$(location.hash)?.scrollIntoView({behavior:'instant'});
+  else if(/^#(?:overview|about-section|contact|project-\d+)$/.test(location.hash))goTo(location.hash);
   draw();
+});
+const impressum=$('#impressum');
+$('#impressum-trigger').addEventListener('click',()=>impressum.showModal());
+const projectMenu=$('#project-menu');
+let menuTrigger,menuDestination=false;
+$('#project-names').innerHTML=projects.map(p=>`<a href="#project-${p.id}"><span>${String(p.id).padStart(2,'0')}</span>${escapeHTML(p.title)}</a>`).join('');
+document.querySelectorAll('.projects-trigger').forEach(button=>button.addEventListener('click',()=>{
+  menuTrigger=button;menuDestination=false;projectMenu.showModal();button.setAttribute('aria-expanded','true');
+}));
+projectMenu.addEventListener('close',()=>{
+  document.querySelectorAll('.projects-trigger').forEach(button=>button.setAttribute('aria-expanded','false'));
+  if(!menuDestination){
+    const trigger=menuTrigger?.getClientRects().length?menuTrigger:document.querySelector('header .projects-trigger');
+    trigger?.focus({preventScroll:true});
+  }
+  menuDestination=false;
 });
 cards.forEach((card,i)=>card.addEventListener('click',()=>goTo(`#project-${i+1}`)));
 document.addEventListener('click',event=>{
   const hash=event.target.closest?.('a')?.getAttribute('href');
-  if(!/^#(?:overview|about-section|project-\d+)$/.test(hash)||event.button||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-  event.preventDefault();goTo(hash);
+  if(!/^#(?:overview|about-section|contact|project-\d+)$/.test(hash)||event.button||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  event.preventDefault();
+  if(projectMenu.open){menuDestination=true;projectMenu.close();}
+  goTo(hash);
 });
 function setSkill(skill){
   const reading=active>=0?chapters[active]:null,previousTop=reading?.getBoundingClientRect().top;
@@ -82,13 +148,21 @@ function setSkill(skill){
 }
 document.querySelectorAll('button[data-skill]').forEach(button=>button.addEventListener('click',()=>setSkill(selectedSkill===button.dataset.skill?'':button.dataset.skill)));
 const networkMedia=projects.flatMap((p,projectIndex)=>[...p.photos.map((photo,photoIndex)=>({photo,projectIndex,photoIndex})),...(p.video?[{video:p.video,projectIndex,photoIndex:p.photos.length}]:[])]);
-$('#supporting-images').innerHTML=networkMedia.map(({photo,video,projectIndex})=>video?`<button class="satellite video-preview" aria-label="View ${escapeHTML(projects[projectIndex].title)} video"><img src="${escapeHTML(projects[projectIndex].hero.src)}" alt="" loading="lazy"><iframe src="https://player.vimeo.com/video/${escapeHTML(video)}?background=1&amp;autopause=0&amp;dnt=1" title="${escapeHTML(projects[projectIndex].title)} video preview" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" tabindex="-1" aria-hidden="true"></iframe></button>`:`<button class="satellite" aria-label="Open ${escapeHTML(projects[projectIndex].title)}, ${escapeHTML(photo.title)}">${picture(photo)}</button>`).join('');
+$('#supporting-images').innerHTML=networkMedia.map(({photo,video,projectIndex})=>video?`<button class="satellite video-preview" aria-label="View ${escapeHTML(projects[projectIndex].title)} video">${picture(projects[projectIndex].hero,'preview')}<iframe data-src="https://player.vimeo.com/video/${escapeHTML(video)}?background=1&amp;autopause=0&amp;dnt=1" title="${escapeHTML(projects[projectIndex].title)} video preview" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" tabindex="-1" aria-hidden="true"></iframe></button>`:`<button class="satellite" aria-label="Open ${escapeHTML(projects[projectIndex].title)}, ${escapeHTML(photo.title)}">${picture(photo,'preview')}</button>`).join('');
 const photoCards=[...document.querySelectorAll('.satellite')];
 cards.forEach((card,i)=>{
   let previous=card;
   photoCards.forEach((photo,k)=>{if(networkMedia[k].projectIndex===i){previous.after(photo);previous=photo;}});
 });
-function preview(index){clearTimeout(previewTimer);previewProject=index;draw();}
+function preview(index){
+  clearTimeout(previewTimer);previewProject=index;
+  $('#network-skills').textContent=index<0?'':projects[index].title+' · '+[...new Set(connections.filter(edge=>edge.a===index||edge.b===index).flatMap(edge=>edge.skills))].join(' · ');
+  if(index>=0)photoCards.forEach((card,k)=>{
+    if(networkMedia[k].projectIndex!==index)return;
+    window.portfolioLoading?.hydrate(card.querySelector('img'));
+  });
+  draw();
+}
 function closePreview(){previewTimer=setTimeout(()=>{
   const focused=document.activeElement;
   if(focused===cards[previewProject]||photoCards.some((card,k)=>card===focused&&networkMedia[k].projectIndex===previewProject))return;
@@ -102,11 +176,15 @@ function closePreview(){previewTimer=setTimeout(()=>{
   card.addEventListener('blur',closePreview);
 });
 
-let galleryProject=0,galleryPhoto=0,galleryPhotos=[];
-function renderPhoto(){const photo=galleryPhotos[galleryPhoto];$('#photo-project').textContent=projects[galleryProject].title;$('#photo-title').textContent=photo.title;$('#photo-large').innerHTML=picture(photo,'eager');$('#photo-credit').textContent=photo.credit||'';$('#photo-count').textContent=`${galleryPhoto+1} / ${galleryPhotos.length}`;}
-function openPhoto(projectIndex,collection,index){galleryProject=projectIndex;galleryPhotos=collection==='hero'?[projects[projectIndex].hero]:projects[projectIndex][collection];galleryPhoto=index;renderPhoto();$('#photo-viewer').showModal();}
-photoCards.forEach((card,i)=>card.addEventListener('click',()=>{const item=networkMedia[i];if(item.video)document.querySelector(`#project-${projects[item.projectIndex].id} .project-video`).scrollIntoView({behavior:'smooth',block:'center'});else openPhoto(item.projectIndex,'photos',item.photoIndex);}));
-document.querySelectorAll('[data-detail-project]').forEach(button=>button.addEventListener('click',()=>openPhoto(Number(button.dataset.detailProject),button.dataset.detailCollection,Number(button.dataset.detailImage))));
+let galleryProject=0,galleryPhoto=0,galleryPhotos=[],photoTrigger;
+function renderPhoto(){const photo=galleryPhotos[galleryPhoto];$('#photo-project').textContent=projects[galleryProject].title;$('#photo-title').textContent=photo.title;$('#photo-large').innerHTML=picture(photo,'full','eager');$('#photo-credit').textContent=photo.credit||'';$('#photo-count').textContent=`${galleryPhoto+1} / ${galleryPhotos.length}`;}
+function openPhoto(projectIndex,collection,index,trigger=document.activeElement){photoTrigger=trigger;galleryProject=projectIndex;galleryPhotos=collection==='hero'?[projects[projectIndex].hero]:projects[projectIndex][collection];galleryPhoto=index;renderPhoto();$('#photo-viewer').showModal();}
+photoCards.forEach((card,i)=>card.addEventListener('click',event=>{const item=networkMedia[i];if(item.video)document.querySelector(`#project-${projects[item.projectIndex].id} .project-video`).scrollIntoView({behavior:'smooth',block:'center'});else openPhoto(item.projectIndex,'photos',item.photoIndex,event.currentTarget);}));
+document.querySelectorAll('[data-detail-project]').forEach(button=>button.addEventListener('click',()=>openPhoto(Number(button.dataset.detailProject),button.dataset.detailCollection,Number(button.dataset.detailImage),button)));
+$('#photo-viewer').addEventListener('close',()=>{
+  const target=photoTrigger?.isConnected&&photoTrigger.getAttribute('aria-hidden')!=='true'?photoTrigger:$(active>=0?'#project-'+(active+1):'#overview');
+  target?.focus({preventScroll:true});
+});
 $('#photo-prev').addEventListener('click',()=>{galleryPhoto=(galleryPhoto-1+galleryPhotos.length)%galleryPhotos.length;renderPhoto();});
 $('#photo-next').addEventListener('click',()=>{galleryPhoto=(galleryPhoto+1)%galleryPhotos.length;renderPhoto();});
 document.querySelectorAll('.about-trigger').forEach(button=>button.addEventListener('click',()=>goTo('#about-section')));
@@ -133,36 +211,53 @@ function rotate(p,yaw,pitch=.54){
   const side=.16,roll=.12,turnedX=x*Math.cos(side)-depth*Math.sin(side);
   return {x:turnedX*Math.cos(roll)-y*Math.sin(roll),y:turnedX*Math.sin(roll)+y*Math.cos(roll),z:x*Math.sin(side)+depth*Math.cos(side)};
 }
-// Only network cards (including their labels) reserve space; the world may extend offscreen.
+// Keep captions clear; modest image-body overlap preserves the network’s depth.
 function placeNetwork(items, gap, bounds={},obstacles=[]){
   const {left=-Infinity,right=Infinity,top=-Infinity,bottom=Infinity}=bounds;
-  const occupied=[...obstacles];
+  const occupied=[];
   const overlaps=(a,b)=>a.left<b.right+gap&&a.right+gap>b.left&&a.top<b.bottom+gap&&a.bottom+gap>b.top;
   return items.map(item=>{
     const halfW=item.w/2,halfH=item.h/2;
+    const labelH=item.labelH??(item.hero?Math.min(40,item.h*.3):0), labelW=item.labelW??item.w;
     const rect=(x,y)=>({left:x-halfW,right:x+halfW,top:y-halfH,bottom:y+halfH});
-    const fit=(x,y)=>x-halfW>=left&&x+halfW<=right&&y-halfH>=top&&y+halfH<=bottom&&!occupied.some(o=>overlaps(rect(x,y),o));
+    const caption=r=>labelH?{left:r.left,right:r.left+labelW,top:r.bottom-labelH,bottom:r.bottom}:null;
+    const fit=(x,y)=>{
+      const r=rect(x,y), label=caption(r);
+      return r.left>=left&&r.right<=right&&r.top>=top&&r.bottom<=bottom&&!obstacles.some(o=>overlaps(r,o))&&!occupied.some(o=>{
+        const area=Math.max(0,Math.min(r.right,o.right)-Math.max(r.left,o.left))*Math.max(0,Math.min(r.bottom,o.bottom)-Math.max(r.top,o.top));
+        return label&&overlaps(label,o)||o.caption&&overlaps(r,o.caption)||area>Math.min(item.w*item.h,o.area)*.18;
+      });
+    };
     let x=Math.min(right-halfW,Math.max(item.x,left+halfW)),y=Math.min(bottom-halfH,Math.max(item.y,top+halfH));
     if(!fit(x,y)){
       const xs=[x,...[left+halfW,right-halfW].filter(Number.isFinite)],ys=[y,...[top+halfH,bottom-halfH].filter(Number.isFinite)];
-      occupied.forEach(o=>{xs.push(o.left-gap-halfW,o.right+gap+halfW);ys.push(o.top-gap-halfH,o.bottom+gap+halfH);});
+      [...occupied,...obstacles].forEach(o=>{xs.push(o.left-gap-halfW,o.right+gap+halfW);ys.push(o.top-gap-halfH,o.bottom+gap+halfH);});
       let distance=Infinity;
       for(const candidateX of xs)for(const candidateY of ys){
         const d=(candidateX-item.x)**2+(candidateY-item.y)**2;
         if(d<distance&&fit(candidateX,candidateY)){x=candidateX;y=candidateY;distance=d;}
       }
     }
-    occupied.push(rect(x,y));
+    const r=rect(x,y);occupied.push({...r,caption:caption(r),area:item.w*item.h});
     return {...item,x,y};
   });
 }
-let projectEntries=[],protection=[];
+let projectEntries=[],protection=[],overviewStage=null,aboutFrame=null,desktopOverview=null,endingStart=Infinity;
 const networkLayouts=new Map();
 let networkPlacement=[];
 const mix=(a,b,t)=>a+(b-a)*t;
 function screenPoint(point,pose){
   const q=rotate(point,pose.yaw),scale=1000/Math.max(300,1000+q.z)*pose.zoom;
   return {x:pose.x+q.x*scale,y:pose.y-q.y*scale,s:scale,z:q.z};
+}
+function fitDesktopOverview(){
+  const projected=[...points,...anchors,about].map(point=>screenPoint(point,{x:0,y:0,yaw:.33,zoom:1}));
+  const xs=projected.map(point=>point.x),ys=projected.map(point=>point.y);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const left=width*.28,right=width*.96,top=$('header').getBoundingClientRect().bottom+24,bottom=$('footer').getBoundingClientRect().top-24;
+  // Include room for project images and captions beyond the network's outer points.
+  const zoom=Math.max(.05,Math.min((right-left-160)/(maxX-minX),(bottom-top-160)/(maxY-minY)));
+  return {x:(left+right)/2-(minX+maxX)/2*zoom,y:(top+bottom)/2-(minY+maxY)/2*zoom,yaw:.33,zoom};
 }
 function registeredPose(index){
   const entry=projectEntries[index],yaw=-Math.PI/2-projects[index].angle;
@@ -173,10 +268,12 @@ function registeredPose(index){
 }
 function blendPose(a,b,t){return {x:mix(a.x,b.x,t),y:mix(a.y,b.y,t),yaw:mix(a.yaw,b.yaw,t),zoom:mix(a.zoom,b.zoom,t)};}
 function networkScene(y){
-  const overview={x:width*.59,y:height*.46,yaw:.33,zoom:Math.min(width/1120,height/720)};
+  const compact=width<1000;
+  const overview=compact&&overviewStage?{x:width*.5,y:overviewStage.top+overviewStage.height*.48-y,yaw:.33,zoom:Math.min(width/600,.8)}:(desktopOverview||{x:width*.59,y:height*.46,yaw:.33,zoom:Math.min(width/1120,height/720)});
   const aboutPose={x:width*(width<1000?.5:.34),y:height*.63,yaw:.33,zoom:Math.min(width/1000,height/720)};
-  let current=projectEntries.findLastIndex(entry=>y>=entry.open);
-  const incoming=projectEntries.findIndex(entry=>y<entry.open);
+  // Native anchor scrolling can settle a fraction of a CSS pixel before the stop.
+  let current=projectEntries.findLastIndex(entry=>y>=entry.open-1);
+  const incoming=projectEntries.findIndex(entry=>y<entry.open-1);
   if(incoming>=0&&y>=projectEntries[incoming].start){
     const entry=projectEntries[incoming],progress=clamp((y-entry.start)/(entry.open-entry.start));
     const from=incoming?registeredPose(incoming-1):aboutPose,to=registeredPose(incoming);
@@ -184,13 +281,13 @@ function networkScene(y){
     const pose=still?to:progress<.5?blendPose(from,middle,smooth(progress*2)):blendPose(middle,to,smooth(progress*2-1));
     return {phase:'transition',current:incoming,progress,pose};
   }
-  if(current>=0)return {phase:'reading',current,progress:1,pose:registeredPose(current)};
+  if(current>=0)return {phase:y>=endingStart?'ending':'reading',current,progress:1,pose:registeredPose(current)};
   const aboutStart=chapterStops[0],t=still?1:smooth(clamp((y-aboutStart)/(height*.5)));
   return {phase:y>=aboutStart?'about':'overview',current:-1,progress:t,pose:y>=aboutStart?blendPose(overview,aboutPose,t):overview};
 }
 function cardSize(card){
-  const css=getComputedStyle(card),image=card.querySelector('.image'),imageCss=image&&getComputedStyle(image);
-  return {w:parseFloat(css.width)||card.offsetWidth,h:parseFloat(css.height)||card.offsetHeight,imageW:parseFloat(imageCss?.width)||card.offsetWidth,imageH:parseFloat(imageCss?.height)||card.offsetHeight};
+  const css=getComputedStyle(card),image=card.querySelector('.image'),imageCss=image&&getComputedStyle(image),label=card.querySelector('.label');
+  return {labelW:label?.offsetWidth||card.offsetWidth,labelH:label?label.offsetHeight+9:0,w:parseFloat(css.width)||card.offsetWidth,h:parseFloat(css.height)||card.offsetHeight,imageW:parseFloat(imageCss?.width)||card.offsetWidth,imageH:parseFloat(imageCss?.height)||card.offsetHeight};
 }
 function contextLayout(index){
   const key=`${index}:${previewProject}`;
@@ -198,8 +295,8 @@ function contextLayout(index){
   const entry=projectEntries[index],pose=registeredPose(index);
   const items=anchors.flatMap((anchor,i)=>{
     if(i===index)return [];
-    const card=cards[i],size=cardSize(card),point=screenPoint(anchor,pose),scale=clamp(point.s,.55,width<760?1:1.1);
-    return [{card,index:i,x:point.x+(size.w-size.imageW)/2*scale,y:point.y+(size.h-size.imageH)/2*scale,w:size.w*scale,h:size.h*scale,scale}];
+    const card=cards[i],size=cardSize(card),point=screenPoint(anchor,pose),scale=clamp(point.s,width<760?.8:.55,width<760?1:1.1);
+    return [{card,index:i,x:point.x+(size.w-size.imageW)/2*scale,y:point.y+(size.h-size.imageH)/2*scale,w:size.w*scale,h:size.h*scale,labelW:size.labelW*scale,labelH:size.labelH*scale,scale}];
   });
   const obstacles=[{left:entry.left-8,right:entry.left+entry.w+8,top:width>=1280?120:entry.y-entry.h/2-16,bottom:width>=1280?height:entry.y+entry.h/2+40}];
   if(width>=1000)obstacles.push({left:entry.textLeft-8,right:entry.textRight+8,top:120,bottom:height});
@@ -209,21 +306,32 @@ function contextLayout(index){
 }
 function draw(){
   const mobile=width<760,scene=networkScene(scrollY),{phase,current,pose}=scene;
+  if(current>=0){
+    const image=cards[current].querySelector('img');
+    if(image&&!image.dataset.upgraded){
+      const variants=window.PORTFOLIO_MEDIA?.[projects[current].hero.src];
+      if(variants){image.sizes=imageSizes.reading;image.srcset=variants.map(item=>`${item.src} ${item.width}w`).join(', ');}
+      image.dataset.upgraded='true';
+    }
+  }
+  const compactOverview=phase==='overview'&&width<1000;
   const reading=phase==='reading',transition=phase==='transition',inProject=current>=0;
   document.body.classList.toggle('reading-project',reading);
   document.body.classList.toggle('network-transition',transition);
   document.body.classList.toggle('previewing-project',previewProject>=0);
   document.body.dataset.networkPhase=phase;
-  const currentProtection=reading?protection.map(rect=>({...rect,top:rect.top-scrollY,bottom:rect.bottom-scrollY})).filter(rect=>rect.bottom>0&&rect.top<height):[];
+  const currentProtection=(reading||phase==='about'||phase==='overview')?protection.map(rect=>({...rect,top:rect.top-scrollY,bottom:rect.bottom-scrollY})).filter(rect=>rect.bottom>0&&rect.top<height):[];
   const headerBottom=$('header').getBoundingClientRect().bottom;
   const footerTop=$('footer').getBoundingClientRect().top;
+  const portrait=phase==='about'&&width>=1000;
+  const avatarFrame=portrait&&aboutFrame?{x:aboutFrame.x,y:(headerBottom+footerTop)/2,w:Math.max(aboutFrame.w,(footerTop-headerBottom-32)*.85),h:Math.max(180,footerTop-headerBottom-32)}:aboutFrame&&{...aboutFrame,y:aboutFrame.y-scrollY};
   const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
-  const imageSize=mobile?1:.7;
+  const imageSize=compactOverview||mobile?1:.7;
   cards.forEach(card=>card.style.setProperty('--image-scale',imageSize));
   photoCards.forEach(card=>card.style.setProperty('--image-scale',imageSize));
   const items=anchors.map((anchor,i)=>{
     const point=screenPoint(anchor,pose),card=cards[i],size=cardSize(card);
-    let scale=clamp(point.s,.55,mobile?1:1.1);
+    let scale=clamp(point.s,mobile?.8:.55,mobile?1:1.1);
     if(i===current){
       const entry=projectEntries[i],ratio=projects[i].hero.width/projects[i].hero.height;
       const visualWidth=Math.min(entry.w,entry.h*ratio);
@@ -232,10 +340,10 @@ function draw(){
     }
     // Nodes are centred on their image; their caption sits below that anchor.
     const x=point.x+(size.w-size.imageW)/2*scale,y=point.y+(size.h-size.imageH)/2*scale;
-    return {card,x,y,w:size.w*scale,h:size.h*scale,scale,index:i,hero:true,anchor:point};
+    return {card,x,y,w:size.w*scale,h:size.h*scale,labelW:size.labelW*scale,labelH:size.labelH*scale,scale,index:i,hero:true,anchor:point};
   });
   networkMedia.forEach(({projectIndex,photoIndex},k)=>{
-    if(projectIndex!==previewProject||projectIndex===current&&inProject)return;
+    if(compactOverview||projectIndex!==previewProject||projectIndex===current&&inProject)return;
     const angle=projects[projectIndex].angle,anchor=anchors[projectIndex],orbit=(photoIndex+.5)/(projects[projectIndex].photos.length+1)*tau;
     const point=screenPoint({x:anchor.x-Math.sin(angle)*Math.sin(orbit)*140,y:anchor.y+Math.cos(orbit)*110,z:anchor.z+Math.cos(angle)*Math.sin(orbit)*140},pose);
     const card=photoCards[k],scale=clamp(point.s,.55,1.2);
@@ -245,7 +353,14 @@ function draw(){
   const context=items.filter(item=>item!==selected);
   const bounds={left:16,right:width-16,top:mobile?145:130,bottom:Math.max(mobile?250:230,height-90)};
   // Only context cards use collision spacing; the selected image must land exactly.
-  const placed=placeNetwork(context,mobile?8:16,bounds);
+  const avatarProtection=phase==='about'&&avatarFrame?{left:avatarFrame.x-avatarFrame.w*.34,right:avatarFrame.x+avatarFrame.w*.34,top:avatarFrame.y-avatarFrame.h/2-12,bottom:avatarFrame.y+avatarFrame.h/2+12}:null;
+  if(avatarProtection)currentProtection.push(avatarProtection);
+  const placed=compactOverview?context.map(item=>{
+    const landscape=width>height,stage=overviewStage||{top:scrollY+320,height:440};
+    const centers=landscape?[[.47,.5],[.67,.5],[.85,.5]]:[[.24,.18],[.73,.28],[.45,.75]];
+    const size=cardSize(item.card),position=centers[item.index];
+    return {...item,x:position?width*position[0]:width+160+(item.index-3)*150,y:stage.top-scrollY+stage.height*(position?position[1]:.5),scale:1,w:size.w,h:size.h};
+  }):placeNetwork(context,mobile?8:16,bounds,phase==='overview'?currentProtection:[]);
   if(inProject){
     const index=transition&&!still&&scene.progress<.5?current-1:current;
     const amount=reading||still?1:scene.progress<.5?1-smooth(scene.progress*2):smooth(scene.progress*2-1);
@@ -280,17 +395,26 @@ function draw(){
   placed.forEach(item=>{
     const {card,x,y,scale}=item;
     const rect={left:x-item.w/2,right:x+item.w/2,top:y-item.h/2,bottom:y+item.h/2};
-    const visible=!(reading&&item.hero&&item.index===current);
-    const exposed=visible&&rect.left>=0&&rect.right<=width&&rect.top>=headerBottom+8&&rect.bottom<=footerTop-8&&!currentProtection.some(panel=>overlaps(rect,panel));
+    const visible=!((reading||phase==='ending')&&item.hero&&item.index===current);
+    const exposed=visible&&phase!=='ending'&&rect.left>=0&&rect.right<=width&&rect.top>=headerBottom+8&&rect.bottom<=footerTop-8&&!currentProtection.some(panel=>overlaps(rect,panel));
     card.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${scale})`;
     card.style.visibility=visible?'visible':'hidden';
     card.style.pointerEvents=exposed?'auto':'none';card.tabIndex=exposed?0:-1;card.setAttribute('aria-hidden',String(!exposed));
     card.classList.toggle('landing',transition&&item.hero&&item.index===current);
-    card.style.opacity=String(item.index===current?1:selectedSkill&&!projects[item.index].skills.includes(selectedSkill)?.2:reading?(item.hero?.48:.35):1);
+    card.style.opacity=String(item.index===current?1:selectedSkill&&!projects[item.index].skills.includes(selectedSkill)?.2:reading?(item.hero?.48:.35):phase==='about'?(currentProtection.some(panel=>overlaps(rect,panel))?.18:.65):1);
     card.style.zIndex=String(item.index===current?1900:item.index===previewProject?1800:500);
     exposedCards.add(card);
   });
-  photoCards.forEach(card=>{if(!exposedCards.has(card)){card.style.visibility='hidden';card.style.pointerEvents='none';card.tabIndex=-1;card.setAttribute('aria-hidden','true');}});
+  photoCards.forEach(card=>{
+    if(!exposedCards.has(card)){card.style.visibility='hidden';card.style.pointerEvents='none';card.tabIndex=-1;card.setAttribute('aria-hidden','true');}
+    const frame=card.querySelector('iframe');
+    if(!frame)return;
+    const play=exposedCards.has(card)&&card.style.pointerEvents==='auto'&&!window.portfolioLoading?.restricted();
+    if(play)loadFrame(frame);
+    else if(frame.getAttribute('src')){
+      frame.dataset.src=frame.getAttribute('src');frame.removeAttribute('src');
+    }
+  });
   connections.forEach(edge=>{
     if(selectedSkill&&!edge.skills.includes(selectedSkill))return;
     const a=heroes.get(edge.a),b=heroes.get(edge.b);
@@ -306,21 +430,23 @@ function draw(){
     const point=screenPoint(anchors[current],pose);
     ctx.strokeStyle='#83a5ff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(point.x,point.y,5,0,tau);ctx.stroke();
   }
-  const character=$('#about-node'),aboutPoint=screenPoint(about,pose),showAbout=!inProject;
-  const characterScale=phase==='about'&&!still?2.4:1;
-  character.style.setProperty('--about-width-growth',phase==='about'?'100px':'0px');
-  character.style.setProperty('--about-height-growth',phase==='about'?'140px':'0px');
-  character.style.transform=`translate(${aboutPoint.x}px,${aboutPoint.y}px) translate(-50%,-50%) scale(${characterScale})`;
-  character.style.visibility=showAbout?'visible':'hidden';character.style.pointerEvents=showAbout?'auto':'none';character.tabIndex=showAbout?0:-1;character.setAttribute('aria-hidden',String(!showAbout));
+  const character=$('#about-node'),aboutPoint=screenPoint(about,pose),showingAbout=phase==='about';
+  const characterPoint=showingAbout&&avatarFrame?avatarFrame:compactOverview?{x:width>height?width*.94:width*.48,y:overviewStage.top-scrollY+(width>height?0:overviewStage.height*.35)}:aboutPoint;
+  const showAbout=!inProject&&(!showingAbout||characterPoint.y+(avatarFrame?.h||116)/2>headerBottom&&characterPoint.y-(avatarFrame?.h||116)/2<footerTop);
+  character.style.setProperty('--about-width-growth','0px');character.style.setProperty('--about-height-growth','0px');
+  character.classList.toggle('about-portrait',portrait);
+  character.style.width=showingAbout&&avatarFrame?avatarFrame.w+'px':'';
+  character.style.height=showingAbout&&avatarFrame?avatarFrame.h+'px':'';
+  character.style.transform=`translate(${characterPoint.x}px,${characterPoint.y}px) translate(-50%,-50%)`;
+  character.style.visibility='visible';character.style.opacity=showAbout?'1':'0';character.style.pointerEvents=showAbout?'auto':'none';character.tabIndex=showAbout?0:-1;character.setAttribute('aria-hidden',String(!showAbout));
   chapters.forEach((chapter,i)=>{
     chapter.classList.toggle('is-active',i===current);
     chapter.classList.toggle('is-arriving',transition&&i===current);
     const hero=chapter.querySelector('.reading-hero');
     if(hero)hero.inert=transition&&i===current;
   });
-  const showingAbout=phase==='about';
   aboutChapter.classList.toggle('is-active',showingAbout);
-  window.aboutNetworkPose={yaw:pose.yaw,focused:showingAbout,hidden:!showAbout};
+  window.aboutNetworkPose={yaw:pose.yaw,focused:showingAbout,portrait,hidden:!showAbout};
   window.projectNetworkPose={...pose,projectId:current>=0?projects[current].id:null,overview:phase==='overview',phase,progress:scene.progress};
   dispatchEvent(new Event('networkpose'));
   if(current!==active||showingAbout!==aboutActive){
@@ -330,7 +456,9 @@ function draw(){
     links.forEach((link,i)=>{link.classList.toggle('active',i===activeLink);if(i===activeLink)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');});
     $('#view-number').textContent=showingAbout?'00':String(current+1).padStart(2,'0');
   }
-  $('#view-name').textContent=transition?'Connecting / '+projects[current].title:showingAbout?'About me':current<0?'Network overview':projects[current].title;
+  const viewTitle=phase==='ending'?'Contact':transition?'Connecting / '+projects[current].title:showingAbout?'About me':current<0?'Network overview':projects[current].title;
+  $('#view-name').textContent=viewTitle;
+  document.title=(current>=0&&phase!=='ending'?projects[current].title+' — ':phase==='about'?'About — ':phase==='ending'?'Contact — ':'')+'Julius Wenk: Portfolio';
   $('#progress-bar').style.width=`${clamp(scrollY/(document.documentElement.scrollHeight-height))*100}%`;
 }
 function resize(){
@@ -341,9 +469,14 @@ function resize(){
     const open=Math.round(section.top+scrollY-16);
     return {left:hero?.left||width*.06,textLeft:text?.left||width*.56,textRight:text?.right||width*.94,open,start:open-height*.82,x:hero?hero.left+hero.width/2:width*.28,y:hero?hero.top-section.top+16+hero.height/2:height*.45,w:hero?.width||width*.42,h:hero?.height||height*.6};
   });
-  protection=[...document.querySelectorAll('.reading-text,.project-reading>.project-introduction,.project-reading>.project-section,.project-reading>.project-extras,.reading-figure,.about-copy,.ending .project-description')].map(element=>{
+  protection=[...document.querySelectorAll('.reading-text,.project-reading>.project-introduction,.project-reading>.project-section,.project-reading>.project-extras,.reading-figure,.project-onward,.about-copy,.ending .project-description,.intro-copy')].map(element=>{
     const rect=element.getBoundingClientRect();return {left:rect.left-16,right:rect.right+16,top:rect.top+scrollY-16,bottom:rect.bottom+scrollY+16};
   });
+  const stage=$('#network-stage').getBoundingClientRect(),avatar=$('#about-avatar-space').getBoundingClientRect();
+  overviewStage={top:stage.top+scrollY,height:stage.height};aboutFrame={x:avatar.left+avatar.width/2,y:avatar.top+scrollY+avatar.height/2,w:avatar.width,h:avatar.height};
+  desktopOverview=fitDesktopOverview();
+  endingStart=$('#contact').getBoundingClientRect().top+scrollY-height*.3;
+  settleNavigation();
   const dpr=Math.min(devicePixelRatio||1,2);canvas.width=width*dpr;canvas.height=height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);draw();
 }
 let scheduled=false;
@@ -351,10 +484,14 @@ addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFra
 addEventListener('resize',resize);
 // Images and text can change section heights after the initial measurement.
 if(typeof ResizeObserver!=='undefined'){const layoutObserver=new ResizeObserver(resize);chapterSections.forEach(chapter=>layoutObserver.observe(chapter));}
+// Text protection changes even when the media column keeps the chapter height unchanged.
+document.querySelectorAll('details').forEach(details=>details.addEventListener('toggle',()=>{cancelNavigation();resize();}));
 setSkill('');setStill(still);
 // Project sections are generated above, so resolve incoming project links after they exist.
-if (/^#(?:overview|about-section|project-\d+)$/.test(location.hash)&&$(location.hash)) requestAnimationFrame(() => $(location.hash).scrollIntoView({behavior:'instant'}));
+if (/^#(?:overview|about-section|contact|project-\d+)$/.test(location.hash)&&$(location.hash)) requestAnimationFrame(() => goTo(location.hash));
 
 // Image and model sizes can settle after the first camera frame.
 document.querySelectorAll('#world img').forEach(image=>image.addEventListener('load',draw));
 if(typeof ResizeObserver!=='undefined'){const cardObserver=new ResizeObserver(()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;draw();});}});[...cards,...photoCards,$('#about-node')].forEach(card=>cardObserver.observe(card));}
+
+requestAnimationFrame(()=>window.portfolioLoading?.ready());

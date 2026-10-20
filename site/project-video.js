@@ -11,7 +11,31 @@ if (video) {
   const appleBrowser = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
     /Safari/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/.test(navigator.userAgent);
   video.muted = true;
-  video.src = appleBrowser && video.canPlayType('video/mp4; codecs="hvc1"') ? video.dataset.hevc : video.dataset.webm;
+  const loading = window.portfolioLoading;
+  const loadButton = document.querySelector('[data-load-turntable]');
+  const status = document.querySelector('#turntable-status');
+  let enabled = false, requested = false;
+  function loadVideo(explicit = false) {
+    if (!enabled || requested || document.hidden || !explicit && loading.restricted()) return;
+    requested = true;
+    loadButton.hidden = true;
+    status.textContent = 'Loading interactive view…';
+    video.preload = 'auto';
+    video.src = appleBrowser && video.canPlayType('video/mp4; codecs="hvc1"') ? video.dataset.hevc : video.dataset.webm;
+    video.load();
+  }
+  loadButton.addEventListener('click', () => loadVideo(true));
+  ['pointerenter','focus'].forEach(event => networkButton.addEventListener(event, () => loadVideo()));
+  loading.usable.then(() => {
+    enabled = true;
+    if (typeof IntersectionObserver !== 'undefined') {
+      const observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) loadVideo();
+      }, {rootMargin:'100% 0px'});
+      observer.observe(readingButton);
+    }
+    sync();
+  });
   [networkButton,readingButton].filter(Boolean).forEach(host=>host.setAttribute('aria-description', 'Plays one turn when selected. Afterwards move the mouse left or right, drag horizontally, or use the arrow keys to rotate.'));
   let focused = false, completed = false, reset = false, mode = 'paused';
   let frame = 0, lastX = null, dragging = false, scheduled = false;
@@ -34,6 +58,8 @@ if (video) {
   function sync() {
     const pose = window.projectNetworkPose;
     const inFocus = pose?.phase === 'reading' && pose.projectId === Number(networkButton.dataset.project);
+    loadButton.hidden = requested || !loading.restricted();
+    if (pose?.projectId === Number(networkButton.dataset.project)) loadVideo();
     const destination=inFocus&&readingButton?readingButton:networkButton;
     if(destination!==button){
       button.classList.remove('project-video-ready');
@@ -43,9 +69,9 @@ if (video) {
     }
     if (inFocus && !focused) { completed = false; reset = true; }
     focused = inFocus;
-    const blocked = document.hidden || document.body.classList.contains('still');
+    const blocked = document.hidden || !loading.motionAllowed();
     const next = blocked ? 'paused' : focused ? completed ? 'manual' : 'intro' : pose?.overview ? 'overview' : 'paused';
-    if (video.readyState < 1) return;
+    if (!requested || video.readyState < 1) return;
     if (reset) { video.pause(); video.currentTime = 0; frame = 0; reset = false; }
     if (next === mode) return;
     mode = next;
@@ -60,7 +86,7 @@ if (video) {
     }
   }
 
-  video.addEventListener('loadeddata', () => { button.classList.add('project-video-ready'); sync(); });
+  video.addEventListener('loadeddata', () => { status.textContent = ''; button.classList.add('project-video-ready'); sync(); });
   video.addEventListener('ended', () => {
     if (mode !== 'intro') return;
     completed = true;
@@ -71,9 +97,11 @@ if (video) {
   video.addEventListener('error', () => {
     button.classList.remove('project-video-ready');
     video.pause();
+    status.textContent = 'Interactive view unavailable. Showing the still image.';
     console.warn('Hyperreal video could not load; showing its poster.');
   });
   addEventListener('networkpose', sync);
+  navigator.connection?.addEventListener('change', sync);
   document.addEventListener('visibilitychange', sync);
   addEventListener('pointermove', event => {
     if (event.pointerType !== 'mouse' && !dragging) return;
