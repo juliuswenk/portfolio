@@ -211,39 +211,7 @@ function rotate(p,yaw,pitch=.54){
   const side=.16,roll=.12,turnedX=x*Math.cos(side)-depth*Math.sin(side);
   return {x:turnedX*Math.cos(roll)-y*Math.sin(roll),y:turnedX*Math.sin(roll)+y*Math.cos(roll),z:x*Math.sin(side)+depth*Math.cos(side)};
 }
-// Keep captions clear; modest image-body overlap preserves the network’s depth.
-function placeNetwork(items, gap, bounds={},obstacles=[]){
-  const {left=-Infinity,right=Infinity,top=-Infinity,bottom=Infinity}=bounds;
-  const occupied=[];
-  const overlaps=(a,b)=>a.left<b.right+gap&&a.right+gap>b.left&&a.top<b.bottom+gap&&a.bottom+gap>b.top;
-  return items.map(item=>{
-    const halfW=item.w/2,halfH=item.h/2;
-    const labelH=item.labelH??(item.hero?Math.min(40,item.h*.3):0), labelW=item.labelW??item.w;
-    const rect=(x,y)=>({left:x-halfW,right:x+halfW,top:y-halfH,bottom:y+halfH});
-    const caption=r=>labelH?{left:r.left,right:r.left+labelW,top:r.bottom-labelH,bottom:r.bottom}:null;
-    const fit=(x,y)=>{
-      const r=rect(x,y), label=caption(r);
-      return r.left>=left&&r.right<=right&&r.top>=top&&r.bottom<=bottom&&!obstacles.some(o=>overlaps(r,o))&&!occupied.some(o=>{
-        const area=Math.max(0,Math.min(r.right,o.right)-Math.max(r.left,o.left))*Math.max(0,Math.min(r.bottom,o.bottom)-Math.max(r.top,o.top));
-        return label&&overlaps(label,o)||o.caption&&overlaps(r,o.caption)||area>Math.min(item.w*item.h,o.area)*.18;
-      });
-    };
-    let x=Math.min(right-halfW,Math.max(item.x,left+halfW)),y=Math.min(bottom-halfH,Math.max(item.y,top+halfH));
-    if(!fit(x,y)){
-      const xs=[x,...[left+halfW,right-halfW].filter(Number.isFinite)],ys=[y,...[top+halfH,bottom-halfH].filter(Number.isFinite)];
-      [...occupied,...obstacles].forEach(o=>{xs.push(o.left-gap-halfW,o.right+gap+halfW);ys.push(o.top-gap-halfH,o.bottom+gap+halfH);});
-      let distance=Infinity;
-      for(const candidateX of xs)for(const candidateY of ys){
-        const d=(candidateX-item.x)**2+(candidateY-item.y)**2;
-        if(d<distance&&fit(candidateX,candidateY)){x=candidateX;y=candidateY;distance=d;}
-      }
-    }
-    const r=rect(x,y);occupied.push({...r,caption:caption(r),area:item.w*item.h});
-    return {...item,x,y};
-  });
-}
 let projectEntries=[],protection=[],overviewStage=null,aboutFrame=null,desktopOverview=null,endingStart=Infinity;
-const networkLayouts=new Map();
 let networkPlacement=[];
 const mix=(a,b,t)=>a+(b-a)*t;
 function screenPoint(point,pose){
@@ -286,23 +254,8 @@ function networkScene(y){
   return {phase:y>=aboutStart?'about':'overview',current:-1,progress:t,pose:y>=aboutStart?blendPose(overview,aboutPose,t):overview};
 }
 function cardSize(card){
-  const css=getComputedStyle(card),image=card.querySelector('.image'),imageCss=image&&getComputedStyle(image),label=card.querySelector('.label');
-  return {labelW:label?.offsetWidth||card.offsetWidth,labelH:label?label.offsetHeight+9:0,w:parseFloat(css.width)||card.offsetWidth,h:parseFloat(css.height)||card.offsetHeight,imageW:parseFloat(imageCss?.width)||card.offsetWidth,imageH:parseFloat(imageCss?.height)||card.offsetHeight};
-}
-function contextLayout(index){
-  const key=`${index}:${previewProject}`;
-  if(networkLayouts.has(key))return networkLayouts.get(key);
-  const entry=projectEntries[index],pose=registeredPose(index);
-  const items=anchors.flatMap((anchor,i)=>{
-    if(i===index)return [];
-    const card=cards[i],size=cardSize(card),point=screenPoint(anchor,pose),scale=clamp(point.s,width<760?.8:.55,width<760?1:1.1);
-    return [{card,index:i,x:point.x+(size.w-size.imageW)/2*scale,y:point.y+(size.h-size.imageH)/2*scale,w:size.w*scale,h:size.h*scale,labelW:size.labelW*scale,labelH:size.labelH*scale,scale}];
-  });
-  const obstacles=[{left:entry.left-8,right:entry.left+entry.w+8,top:width>=1280?120:entry.y-entry.h/2-16,bottom:width>=1280?height:entry.y+entry.h/2+40}];
-  if(width>=1000)obstacles.push({left:entry.textLeft-8,right:entry.textRight+8,top:120,bottom:height});
-  const layout=placeNetwork(items,8,{left:16,right:width-16,top:width<760?145:130,bottom:Math.max(250,height-90)},obstacles);
-  networkLayouts.set(key,new Map(layout.map(item=>[item.card,item])));
-  return networkLayouts.get(key);
+  const css=getComputedStyle(card),image=card.querySelector('.image'),imageCss=image&&getComputedStyle(image);
+  return {w:parseFloat(css.width)||card.offsetWidth,h:parseFloat(css.height)||card.offsetHeight,imageW:parseFloat(imageCss?.width)||card.offsetWidth,imageH:parseFloat(imageCss?.height)||card.offsetHeight};
 }
 function draw(){
   const mobile=width<760,scene=networkScene(scrollY),{phase,current,pose}=scene;
@@ -340,7 +293,7 @@ function draw(){
     }
     // Nodes are centred on their image; their caption sits below that anchor.
     const x=point.x+(size.w-size.imageW)/2*scale,y=point.y+(size.h-size.imageH)/2*scale;
-    return {card,x,y,w:size.w*scale,h:size.h*scale,labelW:size.labelW*scale,labelH:size.labelH*scale,scale,index:i,hero:true,anchor:point};
+    return {card,x,y,w:size.w*scale,h:size.h*scale,scale,index:i,hero:true,anchor:point};
   });
   networkMedia.forEach(({projectIndex,photoIndex},k)=>{
     if(compactOverview||projectIndex!==previewProject||projectIndex===current&&inProject)return;
@@ -351,8 +304,6 @@ function draw(){
   });
   const selected=items.find(item=>item.hero&&item.index===current);
   const context=items.filter(item=>item!==selected);
-  const bounds={left:16,right:width-16,top:mobile?145:130,bottom:Math.max(mobile?250:230,height-90)};
-  // Only context cards use collision spacing; the selected image must land exactly.
   const avatarProtection=phase==='about'&&avatarFrame?{left:avatarFrame.x-avatarFrame.w*.34,right:avatarFrame.x+avatarFrame.w*.34,top:avatarFrame.y-avatarFrame.h/2-12,bottom:avatarFrame.y+avatarFrame.h/2+12}:null;
   if(avatarProtection)currentProtection.push(avatarProtection);
   const placed=compactOverview?context.map(item=>{
@@ -360,19 +311,7 @@ function draw(){
     const centers=landscape?[[.47,.5],[.67,.5],[.85,.5]]:[[.24,.18],[.73,.28],[.45,.75]];
     const size=cardSize(item.card),position=centers[item.index];
     return {...item,x:position?width*position[0]:width+160+(item.index-3)*150,y:stage.top-scrollY+stage.height*(position?position[1]:.5),scale:1,w:size.w,h:size.h};
-  }):placeNetwork(context,mobile?8:16,bounds,phase==='overview'?currentProtection:[]);
-  if(inProject){
-    const index=transition&&!still&&scene.progress<.5?current-1:current;
-    const amount=reading||still?1:scene.progress<.5?1-smooth(scene.progress*2):smooth(scene.progress*2-1);
-    if(index>=0){
-      const destination=contextLayout(index);
-      placed.forEach(item=>{
-        const end=destination.get(item.card);if(!end)return;
-        item.x=mix(item.x,end.x,amount);item.y=mix(item.y,end.y,amount);item.scale=mix(item.scale,end.scale,amount);
-        const size=cardSize(item.card);item.w=size.w*item.scale;item.h=size.h*item.scale;
-      });
-    }
-  }
+  }):context;
   if(selected)placed.push(selected);
   networkPlacement=placed;
   const heroes=new Map(placed.filter(item=>item.hero).map(item=>[item.index,item]));
@@ -396,12 +335,13 @@ function draw(){
     const {card,x,y,scale}=item;
     const rect={left:x-item.w/2,right:x+item.w/2,top:y-item.h/2,bottom:y+item.h/2};
     const visible=!((reading||phase==='ending')&&item.hero&&item.index===current);
-    const exposed=visible&&phase!=='ending'&&rect.left>=0&&rect.right<=width&&rect.top>=headerBottom+8&&rect.bottom<=footerTop-8&&!currentProtection.some(panel=>overlaps(rect,panel));
+    const exposed=visible&&phase!=='ending'&&rect.right>0&&rect.left<width&&rect.bottom>headerBottom&&rect.top<footerTop;
+    const covered=currentProtection.some(panel=>overlaps(rect,panel));
     card.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${scale})`;
     card.style.visibility=visible?'visible':'hidden';
     card.style.pointerEvents=exposed?'auto':'none';card.tabIndex=exposed?0:-1;card.setAttribute('aria-hidden',String(!exposed));
     card.classList.toggle('landing',transition&&item.hero&&item.index===current);
-    card.style.opacity=String(item.index===current?1:selectedSkill&&!projects[item.index].skills.includes(selectedSkill)?.2:reading?(item.hero?.48:.35):phase==='about'?(currentProtection.some(panel=>overlaps(rect,panel))?.18:.65):1);
+    card.style.opacity=String(item.index===current?1:covered?.18:selectedSkill&&!projects[item.index].skills.includes(selectedSkill)?.2:reading?(item.hero?.48:.35):phase==='about'?.65:1);
     card.style.zIndex=String(item.index===current?1900:item.index===previewProject?1800:500);
     exposedCards.add(card);
   });
@@ -462,12 +402,12 @@ function draw(){
   $('#progress-bar').style.width=`${clamp(scrollY/(document.documentElement.scrollHeight-height))*100}%`;
 }
 function resize(){
-  layoutReading();width=innerWidth;height=innerHeight;networkLayouts.clear();
+  layoutReading();width=innerWidth;height=innerHeight;
   chapterStops=chapterSections.map(chapter=>chapter.getBoundingClientRect().top+scrollY-height*.24);
   projectEntries=chapters.map(chapter=>{
-    const section=chapter.getBoundingClientRect(),hero=chapter.querySelector('.reading-hero .image')?.getBoundingClientRect(),text=chapter.querySelector('.reading-text')?.getBoundingClientRect();
+    const section=chapter.getBoundingClientRect(),hero=chapter.querySelector('.reading-hero .image')?.getBoundingClientRect();
     const open=Math.round(section.top+scrollY-16);
-    return {left:hero?.left||width*.06,textLeft:text?.left||width*.56,textRight:text?.right||width*.94,open,start:open-height*.82,x:hero?hero.left+hero.width/2:width*.28,y:hero?hero.top-section.top+16+hero.height/2:height*.45,w:hero?.width||width*.42,h:hero?.height||height*.6};
+    return {open,start:open-height*.82,x:hero?hero.left+hero.width/2:width*.28,y:hero?hero.top-section.top+16+hero.height/2:height*.45,w:hero?.width||width*.42,h:hero?.height||height*.6};
   });
   protection=[...document.querySelectorAll('.reading-text,.project-reading>.project-introduction,.project-reading>.project-section,.project-reading>.project-extras,.reading-figure,.project-onward,.about-copy,.ending .project-description,.intro-copy')].map(element=>{
     const rect=element.getBoundingClientRect();return {left:rect.left-16,right:rect.right+16,top:rect.top+scrollY-16,bottom:rect.bottom+scrollY+16};

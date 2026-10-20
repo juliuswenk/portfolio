@@ -123,8 +123,10 @@ for(const width of [1440,1000,768,390,320]){
   assert.deepEqual(cards.map(card=>card.style.transform),transforms,'Network cards do not follow scrolling content');
   vm.runInContext("setSkill('Interaction design')",context);
   assert.equal(cards[i].style.visibility,'hidden','Skill selection cannot duplicate the selected hero');
+  const beforePanels=cards.map(card=>({transform:card.style.transform,tabIndex:card.tabIndex,pointerEvents:card.style.pointerEvents}));
   vm.runInContext(`protection=[{left:-1000,right:10000,top:0,bottom:100000}];draw()`,context);
-  assert.ok([...cards,...photoCards].every(card=>card.tabIndex===-1&&card.style.pointerEvents==='none'),'Covered nodes cannot capture keyboard or pointer input');
+  assert.deepEqual(cards.map(card=>({transform:card.style.transform,tabIndex:card.tabIndex,pointerEvents:card.style.pointerEvents})),beforePanels,'Panels only fade nodes; they cannot move or disable them');
+  assert.ok(cards.every((card,k)=>k===i||Number(card.style.opacity)<=.18),'Nodes behind panels retain the additional fading');
   vm.runInContext("protection=[];setSkill('')",context);
   context.scrollY=(entry.start+entry.open)/2;vm.runInContext('draw()',context);
   assert.equal(context.document.body.dataset.networkPhase,'transition');
@@ -298,26 +300,6 @@ videoContext.window.projectNetworkPose={phase:'reading',overview:false,projectId
 videoEvents.error();assert.ok(video.paused&&turntableStatus.textContent.includes('unavailable'),'Failed motion keeps a useful poster fallback');
 console.log(`${data.length} projects: assets, shared-skill highlighting, image viewer, and all desktop/mobile camera stops pass.`);
 
-const placement=vm.runInContext('placeNetwork',context);
-const inputs=[{x:200,y:200,w:120,h:160,hero:true,focused:true,index:0},{x:200,y:200,w:100,h:120,hero:true,index:1},{x:200,y:200,w:80,h:90,hero:false,index:0}];
-const placed=placement(inputs,16);
-assert.deepEqual(placed,placement(inputs,16),'Placement is deterministic');
-assert.equal(placed[0].x,200);assert.equal(placed[0].y,200);
-const rectangles=placed.map(p=>({left:p.x-p.w/2,right:p.x+p.w/2,top:p.y-p.h/2,bottom:p.y+p.h/2}));
-for(let i=0;i<rectangles.length;i++){
- const a=rectangles[i];
- for(const b of rectangles.slice(i+1))assert.ok(a.right+16<=b.left||b.right+16<=a.left||a.bottom+16<=b.top||b.bottom+16<=a.top);
-}
-const layered=[{x:200,y:200,w:100,h:100,labelW:30,labelH:20,hero:true},{x:120,y:130,w:100,h:100,labelW:30,labelH:20,hero:true}];
-const gentleOverlap=placement(layered,8);
-assert.equal(gentleOverlap[1].x,120);assert.equal(gentleOverlap[1].y,130,'Small image-edge overlaps do not rearrange otherwise clear captions');
-const blockedCaption=placement([layered[0],{...layered[1],x:200,y:260}],8);
-assert.ok(blockedCaption[1].x!==200||blockedCaption[1].y!==260,'A caption covered by another image still needs clearance');
-const blockedText=placement([layered[0]],8,{},[{left:150,right:250,top:150,bottom:250}]);
-assert.ok(blockedText[0].x!==200||blockedText[0].y!==200,'Reading obstacles remain strict even though image bodies may overlap');
-const offscreen=placement([{x:-100,y:100,w:900,h:900,hero:false}],10)[0];
-assert.equal(offscreen.x,-100,'Viewport edges do not relocate or hide images');
-assert.equal(offscreen.y,100);
 for(const [viewWidth,viewHeight] of [[1000,700],[1440,600],[1440,900],[1920,1080],[2048,1228]]){
  context.scrollY=0;context.innerWidth=viewWidth;context.innerHeight=viewHeight;vm.runInContext('resize()',context);
  const extent=vm.runInContext('[...points,...anchors,about].map(point=>screenPoint(point,networkScene(0).pose))',context);
