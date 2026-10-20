@@ -4,13 +4,15 @@ export function scrubFrame(frame, deltaX, width, frames) {
 
 const video = document.querySelector('.project-video-hero');
 if (video) {
-  const button = video.closest('.node');
+  const networkButton = video.closest('.node');
+  const readingButton = document.querySelector(`.turntable[data-project="${networkButton.dataset.project}"]`);
+  let button = networkButton;
   const frames = Number(video.dataset.frames), fps = Number(video.dataset.fps);
   const appleBrowser = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
     /Safari/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/.test(navigator.userAgent);
   video.muted = true;
   video.src = appleBrowser && video.canPlayType('video/mp4; codecs="hvc1"') ? video.dataset.hevc : video.dataset.webm;
-  button.setAttribute('aria-description', 'Plays one turn when selected. Afterwards move the mouse left or right, drag horizontally, or use the arrow keys to rotate.');
+  [networkButton,readingButton].filter(Boolean).forEach(host=>host.setAttribute('aria-description', 'Plays one turn when selected. Afterwards move the mouse left or right, drag horizontally, or use the arrow keys to rotate.'));
   let focused = false, completed = false, reset = false, mode = 'paused';
   let frame = 0, lastX = null, dragging = false, scheduled = false;
 
@@ -31,7 +33,14 @@ if (video) {
 
   function sync() {
     const pose = window.projectNetworkPose;
-    const inFocus = pose?.projectId === Number(button.dataset.project);
+    const inFocus = pose?.phase === 'reading' && pose.projectId === Number(networkButton.dataset.project);
+    const destination=inFocus&&readingButton?readingButton:networkButton;
+    if(destination!==button){
+      button.classList.remove('project-video-ready');
+      (destination.querySelector('.image')||destination).append(video);
+      button=destination;
+      if(video.readyState>=2)button.classList.add('project-video-ready');
+    }
     if (inFocus && !focused) { completed = false; reset = true; }
     focused = inFocus;
     const blocked = document.hidden || document.body.classList.contains('still');
@@ -71,18 +80,18 @@ if (video) {
     if (lastX !== null) move(event.clientX - lastX);
     lastX = event.clientX;
   }, { passive: true });
-  button.addEventListener('pointerdown', event => {
+  [networkButton,readingButton].filter(Boolean).forEach(host=>host.addEventListener('pointerdown', event => {
     if (event.pointerType !== 'mouse') { dragging = true; lastX = event.clientX; }
-  });
+  }));
   addEventListener('pointerup', () => { dragging = false; });
   addEventListener('pointercancel', () => { dragging = false; lastX = null; });
   document.addEventListener('pointerleave', () => { lastX = null; });
   addEventListener('blur', () => { lastX = null; });
-  button.addEventListener('keydown', event => {
+  [networkButton,readingButton].filter(Boolean).forEach(host=>host.addEventListener('keydown', event => {
     if (mode === 'manual' && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
       event.preventDefault();
       move(innerWidth / 72 * (event.key === 'ArrowRight' ? 1 : -1));
     }
-  });
+  }));
   sync();
 }

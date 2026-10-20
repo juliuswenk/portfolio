@@ -1,6 +1,6 @@
 // Run with node check.cjs: data/assets, skill routes, camera stops, and image viewer.
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const context=vm.createContext({window:{scrollBy(){}},innerWidth:1440,innerHeight:900,devicePixelRatio:1,scrollY:0,matchMedia:()=>({matches:false,addEventListener(){}}),addEventListener(){},dispatchEvent(){},Event:class{},requestAnimationFrame:fn=>fn(),location:{hash:''}});
+const context=vm.createContext({window:{scrollBy(){}},innerWidth:1440,innerHeight:900,devicePixelRatio:1,scrollY:0,matchMedia:()=>({matches:false,addEventListener(){}}),addEventListener(){},dispatchEvent(){},Event:class{},requestAnimationFrame:fn=>fn(),location:{hash:''},history:{},setTimeout:()=>1,clearTimeout(){},getComputedStyle:card=>({width:String(card.offsetWidth),height:String(card.offsetHeight)})});
 vm.runInContext(fs.readFileSync('site/projects.js','utf8'),context);
 const data=context.window.PORTFOLIO_PROJECTS;
 assert.equal(new Set(data.map(p=>p.id)).size,data.length);
@@ -30,13 +30,15 @@ const gltf=JSON.parse(model.subarray(20,20+model.readUInt32LE(12)).toString());
 const headIndex=gltf.nodes.findIndex(node=>/^(?:mixamorig:?)?Head$/i.test(node.name));
 assert.equal(gltf.animations.length,1,'The character needs the wave animation');
 assert.ok(headIndex>=0&&gltf.skins.some(skin=>skin.joints.includes(headIndex)),'The character needs a skinned Head bone');
-const element=()=>({offsetWidth:88,offsetHeight:105,getBoundingClientRect:()=>({left:0,right:0,top:0,bottom:0,width:0,height:0}),querySelector:()=>null,style:{setProperty(name,value){this[name]=value;}},children:[],classList:{values:new Set(),toggle(name,on){on?this.values.add(name):this.values.delete(name);},contains(name){return this.values.has(name);}},addEventListener(){},setAttribute(){},removeAttribute(){},showModal(){},getContext(){return new Proxy({},{get:()=>()=>{}});}});
+const element=()=>({offsetWidth:88,offsetHeight:105,dataset:{},getBoundingClientRect:()=>({left:0,right:0,top:0,bottom:0,width:0,height:0}),querySelector:()=>null,style:{setProperty(name,value){this[name]=value;}},children:[],after(){},classList:{values:new Set(),toggle(name,on){on?this.values.add(name):this.values.delete(name);},contains(name){return this.values.has(name);}},addEventListener(){},setAttribute(){},removeAttribute(){},showModal(){},getContext(){return new Proxy({},{get:()=>()=>{}});}});
 const cards=data.map(()=>({...element(),offsetWidth:155,offsetHeight:220})),aboutChapter={...element(),offsetHeight:2500,getBoundingClientRect:()=>({top:1035-context.scrollY})},chapters=data.map((_,i)=>({...element(),offsetHeight:2500,getBoundingClientRect:()=>({top:3535+i*2500-context.scrollY})}));
 const photoCards=data.flatMap(p=>[...p.photos.map(element),...(p.video?[element()]:[])]),selectors=new Map();
 function query(s){if(!selectors.has(s))selectors.set(s,element());return selectors.get(s);}
 selectors.set('#about-section',aboutChapter);
+selectors.set('header',{...element(),getBoundingClientRect:()=>({bottom:110})});
+selectors.set('footer',{...element(),getBoundingClientRect:()=>({top:context.innerHeight-65})});
 query('#project-index').children=Array.from({length:data.length+2},element);
-context.document={querySelector:query,querySelectorAll:s=>s==='.node'?cards:s==='#chapters .chapter'?chapters:s==='.satellite'?photoCards:[],body:element(),documentElement:{scrollHeight:20000}};
+context.document={addEventListener(){},querySelector:query,querySelectorAll:s=>s==='.node'?cards:s==='#chapters .chapter'?chapters:s==='.satellite'?photoCards:[],body:element(),documentElement:{scrollHeight:20000}};
 vm.runInContext(fs.readFileSync('site/app.js','utf8'),context);
 for(const project of data){
  assert.ok(project.atAGlance&&project.atAGlance.split(/\s+/).length<=110,'Every project has a short overview');
@@ -61,49 +63,76 @@ assert.ok(query('#chapters').innerHTML.includes('<em>Matrix Lamp</em>'));
 assert.ok(!query('#chapters').innerHTML.includes('Project description coming soon.'));
 assert.ok(query('#chapters').innerHTML.includes('https://juliuswenk.github.io/veiled-panopticon/'));
 assert.equal(vm.runInContext("prose('<script> & **safe**')",context),'<p>&lt;script&gt; &amp; <strong>safe</strong></p>');
-for(const width of [1440,768,390]){
+for(const width of [1440,1000,768,390,320]){
  context.innerWidth=width;context.scrollY=0;vm.runInContext('resize()',context);
- const overviewSize=1-.5*(Math.min(1,Math.max(0,(width-760)/440))**2)*(3-2*Math.min(1,Math.max(0,(width-760)/440)));
- [...cards,...photoCards].forEach(card=>assert.equal(card.style['--image-scale'],overviewSize));
- context.scrollY=1035-context.innerHeight*.24+.1;vm.runInContext('draw()',context);
- assert.equal(query('#view-name').textContent,'About me');
- assert.ok(parseFloat(query('#about-node').style['--about-width-growth'])>0);
- context.scrollY=1035-context.innerHeight*.24+context.innerHeight*.75+1;vm.runInContext('draw()',context);
- const characterTransform=query('#about-node').style.transform;
- const characterScale=Number(characterTransform.match(/scale\(([^)]+)\)/)[1]);
- assert.ok(characterScale>=2&&characterScale<=2.7,'Focused character doubles its bounded scale');
- assert.ok(Number(characterTransform.match(/translate\([^,]+,([^p]+)px\)/)[1])>context.innerHeight*(width>=760?.46:.33),'Enlargement shifts the body downward to keep the face visible');
+ assert.ok(cards.every(card=>card.style.visibility==='visible'),'Overview heroes are visible');
+ assert.ok(photoCards.every(card=>card.style.visibility==='hidden'&&card.tabIndex===-1),'Supporting previews remain secondary');
+ vm.runInContext('preview(0)',context);
+ photoCards.forEach((card,k)=>assert.equal(card.style.visibility,vm.runInContext(`networkMedia[${k}].projectIndex`,context)===0?'visible':'hidden'));
+ vm.runInContext('preview(-1)',context);
+ const entries=vm.runInContext('projectEntries',context);
  for(let i=0;i<data.length;i++){
-  context.scrollY=3535+i*2500-context.innerHeight*.24+context.innerHeight*.75+1;vm.runInContext('draw()',context);
+  const entry=entries[i];context.scrollY=entry.open;vm.runInContext('draw()',context);
   assert.equal(query('#view-name').textContent,data[i].title);
-  assert.equal(cards[i].style['--image-scale'],width<760?2:1.6);
-  const focusedMedia=photoCards.filter((_,k)=>vm.runInContext(`networkMedia[${k}].projectIndex`,context)===i);
-  focusedMedia.forEach(card=>assert.equal(card.style['--image-scale'],width<760?2.2:1.8));
-  const focusLayout=vm.runInContext(`[...networkLayouts.entries()].find(([key])=>key.startsWith('false:${i+1}:'))[1]`,context);
-  const focusHero=focusLayout.find(item=>item.hero&&item.index===i);
-  const supporting=focusLayout.filter(item=>!item.hero&&item.index===i);
-  for(const item of supporting)assert.ok(width<760?item.y-item.h/2>focusHero.y+focusHero.h/2:item.x-item.w/2>focusHero.x+focusHero.w/2,'Focused supporting images form rows below or beside the hero');
-
-  assert.equal(cards[(i+1)%data.length].style['--image-scale'],overviewSize);
-  assert.ok(Number.isFinite(context.window.aboutNetworkPose.yaw));
+  assert.equal(context.document.body.dataset.networkPhase,'reading');
+  assert.equal(cards[i].style.visibility,'hidden','Only the duplicate selected image is hidden');
+  assert.ok(cards.some((card,k)=>k!==i&&card.style.visibility==='visible'),'Other projects remain recognisable');
+  assert.ok(cards.some((card,k)=>k!==i&&card.tabIndex===0),'Exposed network nodes remain keyboard-accessible');
+  const point=vm.runInContext(`screenPoint(anchors[${i}],registeredPose(${i}))`,context);
+  assert.ok(Math.abs(point.x-entry.x)<1e-8&&Math.abs(point.y-entry.y)<1e-8,'Camera registers the hero at the column opening');
+  const pose={...context.window.projectNetworkPose},transforms=cards.map(card=>card.style.transform);
+  context.scrollY+=600;vm.runInContext('draw()',context);
+  for(const key of ['x','y','yaw','zoom'])assert.equal(context.window.projectNetworkPose[key],pose[key],'Reading camera stays fixed');
+  assert.deepEqual(cards.map(card=>card.style.transform),transforms,'Network cards do not follow scrolling content');
+  vm.runInContext("setSkill('Interaction design')",context);
+  assert.equal(cards[i].style.visibility,'hidden','Skill selection cannot duplicate the selected hero');
+  vm.runInContext(`protection=[{left:-1000,right:10000,top:0,bottom:100000}];draw()`,context);
+  assert.ok([...cards,...photoCards].every(card=>card.tabIndex===-1&&card.style.pointerEvents==='none'),'Covered nodes cannot capture keyboard or pointer input');
+  vm.runInContext("protection=[];setSkill('')",context);
+  context.scrollY=(entry.start+entry.open)/2;vm.runInContext('draw()',context);
+  assert.equal(context.document.body.dataset.networkPhase,'transition');
+  assert.equal(context.window.projectNetworkPose.projectId,data[i].id);
+  assert.equal(cards[i].style.visibility,'visible','The network hero is visible during arrival');
+  if(i){
+   const previous=vm.runInContext(`registeredPose(${i-1})`,context);
+   const begin=vm.runInContext(`networkScene(projectEntries[${i}].start)`,context);
+   for(const key of ['x','y','yaw','zoom'])assert.equal(begin.pose[key],previous[key],'Transition starts at the preceding reading pose');
+  }
+  const nearEnd=vm.runInContext(`networkScene(projectEntries[${i}].open-.001)`,context);
+  const end=vm.runInContext(`registeredPose(${i})`,context);
+  assert.ok(Math.abs(nearEnd.pose.x-end.x)<.01&&Math.abs(nearEnd.pose.y-end.y)<.01,'Arrival ends without a camera snap');
+  vm.runInContext('setStill(true)',context);
+  const still=vm.runInContext(`networkScene(${entry.start+1})`,context);
+  for(const key of ['x','y','yaw','zoom'])assert.equal(still.pose[key],end[key],'Reduced motion uses the settled pose without animated travel');
+  context.scrollY=entry.start+20;vm.runInContext('draw()',context);
+  const stillTransforms=cards.map(card=>card.style.transform);
+  context.scrollY=entry.open-20;vm.runInContext('draw()',context);
+  assert.deepEqual(cards.map(card=>card.style.transform),stillTransforms,'Still view also freezes context card placement throughout a transition');
+  vm.runInContext('setStill(false)',context);
+ }
+ for(const y of [0,...entries.flatMap(e=>[e.start+1,e.open+1]),...entries.flatMap(e=>[e.open+1,e.start+1]).reverse(),0]){
+  context.scrollY=y;vm.runInContext('draw()',context);
+  const scene=vm.runInContext(`networkScene(${y})`,context);
+  assert.equal(chapters.findIndex(chapter=>chapter.classList.contains('is-active')),scene.current,'Reverse scrolling and active navigation agree');
   [...cards,...photoCards].forEach(card=>assert.ok(!/NaN|Infinity/.test(card.style.transform)));
  }
- for(const direction of [1,-1]){
-  const positions=Array.from({length:180},(_,i)=>i*100);
-  if(direction<0)positions.reverse();
-  for(const y of positions){
-   context.scrollY=y;vm.runInContext('draw()',context);
-   const focused=cards.findIndex(card=>card.classList.contains('active'));
-   const visible=chapters.findIndex(chapter=>chapter.classList.contains('is-active'));
-   assert.equal(focused,visible,`Focus and description diverged at ${width}px / scroll ${y}`);
-   assert.ok(!aboutChapter.classList.contains('is-active')||focused===-1);
-   const expected=y<1035-context.innerHeight*.24?-1:y<3535-context.innerHeight*.24?-1:Math.min(data.length-1,Math.floor((y-3535+context.innerHeight*.24)/2500));
-   assert.equal(focused,expected);
-  }
+}
+const carry=data.find(p=>p.id===7),matrix=data.find(p=>p.id===6);
+assert.equal(carry.hero.src,'assets/carry-the-computation-setup.webp','The printer/controller setup is the Carry hero');
+assert.ok(![carry.hero,...carry.photos,...carry.detailImages].some(image=>image.src==='assets/carry-the-computation-hero.webp'),'The pedestal image is no longer published');
+assert.ok(!carry.detailImages.some(image=>image.src===carry.hero.src),'The new hero is not repeated in the gallery');
+const matrixOrder=['matrix-lamp-06.webp','matrix-lamp-05.webp','matrix-lamp-network-led-detail.png','matrix-lamp-network-profile.png','matrix-lamp-studio-rear.webp','matrix-lamp-studio-front.webp'].map(name=>'assets/'+name);
+assert.deepEqual(Array.from(matrix.detailImages,image=>image.src),matrixOrder,'The viewer follows development through to the finished lamp');
+const renderedMatrix=vm.runInContext('projectChapter(projects[5])',context);
+assert.deepEqual([...renderedMatrix.matchAll(/<img src="([^"]+)"/g)].map(match=>match[1]),[matrix.hero.src,...matrixOrder],'The reading gallery follows the same order without duplicate network views');
+for(const p of data){
+ const chapter=vm.runInContext(`projectChapter(projects[${p.id-1}])`,context);
+ assert.equal((chapter.match(/class="reading-figure reading-hero"/g)||[]).length,1,'One reading hero per project');
+ for(const [collection,placements] of Object.entries(p.mediaSections||{})){
+  assert.equal(placements.length,p[collection].length);
+  placements.forEach(index=>assert.ok(index>=0&&index<p.caseStudy.length));
  }
- vm.runInContext("setSkill('AI systems')",context);
- assert.equal(cards[0].style.opacity,'1');assert.equal(Number(cards[3].style.opacity),.08);assert.equal(Number(cards[2].style.opacity),.08);
- vm.runInContext("setSkill('');setStill(true);setStill(false)",context);
+ for(const image of [p.hero,...p.photos,...p.detailImages])assert.equal(chapter.split(`src="${image.src}"`).length-1,1,'Every image appears once in the reading layout');
 }
 vm.runInContext("openPhoto(0,'detailImages',1)",context);
 assert.ok(query('#photo-large').innerHTML.includes(data[0].detailImages[1].src));
@@ -120,15 +149,17 @@ assert.ok(Math.abs(scrub(359,10)-2.6)<1e-10,'Wrap across the end of the turn');
 assert.ok(scrub(0,-10)>350,'Wrap backwards across the start');
 assert.equal(scrub(180,100,2000),198,'Scale sensitivity with viewport width');
 const videoEvents={},networkEvents={},buttonEvents={};
-const videoButton={dataset:{project:'5'},classList:{add(){},remove(){}},setAttribute(){},addEventListener(name,fn){buttonEvents[name]=fn;}};
+const videoButton={querySelector(){return this;},append(media){media.host=this;},dataset:{project:'5'},classList:{add(){},remove(){}},setAttribute(){},addEventListener(name,fn){buttonEvents[name]=fn;}};
 const video={dataset:{frames:'360',fps:'25',webm:'movie.webm',hevc:'movie.mov'},readyState:4,duration:14.4,currentTime:0,seeking:false,paused:true,canPlayType:()=>'',closest:()=>videoButton,addEventListener(name,fn){videoEvents[name]=fn;},pause(){this.paused=true;},play(){this.paused=false;return Promise.resolve();}};
+const readingVideoButton={...videoButton};
 let videoStill=false;
-const videoDocument={hidden:false,querySelector:()=>video,body:{classList:{contains:()=>videoStill}},addEventListener(name,fn){networkEvents[name]=fn;}};
+const videoDocument={hidden:false,querySelector:selector=>selector.startsWith('.turntable')?readingVideoButton:video,body:{classList:{contains:()=>videoStill}},addEventListener(name,fn){networkEvents[name]=fn;}};
 const videoContext=vm.createContext({document:videoDocument,navigator:{userAgent:'Chrome'},window:{projectNetworkPose:{overview:true,projectId:null}},innerWidth:1000,console,requestAnimationFrame:fn=>fn(),addEventListener(name,fn){networkEvents[name]=fn;}});
 vm.runInContext(fs.readFileSync('site/project-video.js','utf8').replace('export function','function'),videoContext);
 assert.ok(!video.paused&&video.loop,'Overview loops');
-videoContext.window.projectNetworkPose={overview:false,projectId:5};networkEvents.networkpose();
+videoContext.window.projectNetworkPose={phase:'reading',overview:false,projectId:5};networkEvents.networkpose();
 assert.ok(!video.paused&&!video.loop&&video.currentTime===0,'Focus restarts one turn');
+assert.equal(video.host,readingVideoButton,'The single player moves into the reading hero');
 video.currentTime=video.duration;videoEvents.ended();
 assert.ok(video.paused,'One turn ends in manual mode');
 networkEvents.pointermove({pointerType:'mouse',clientX:100});networkEvents.pointermove({pointerType:'mouse',clientX:200});
@@ -137,8 +168,9 @@ networkEvents.pointermove({pointerType:'mouse',clientX:200});assert.equal(video.
 networkEvents.pointermove({pointerType:'mouse',clientX:100});assert.ok(video.currentTime>14,'Left returns to the previous facing');
 videoStill=true;networkEvents.networkpose();const frozen=video.currentTime;
 networkEvents.pointermove({pointerType:'mouse',clientX:300});assert.equal(video.currentTime,frozen,'Still view freezes movement');
-videoStill=false;videoContext.window.projectNetworkPose={overview:false,projectId:3};networkEvents.networkpose();assert.ok(video.paused,'Other projects pause the video');
-videoContext.window.projectNetworkPose={overview:false,projectId:5};networkEvents.networkpose();assert.ok(!video.paused&&video.currentTime===0,'Re-entering focus replays once');
+videoStill=false;videoContext.window.projectNetworkPose={phase:'reading',overview:false,projectId:3};networkEvents.networkpose();assert.ok(video.paused,'Other projects pause the video');
+assert.equal(video.host,videoButton,'The player returns to the overview host');
+videoContext.window.projectNetworkPose={phase:'reading',overview:false,projectId:5};networkEvents.networkpose();assert.ok(!video.paused&&video.currentTime===0,'Re-entering focus replays once');
 console.log(`${data.length} projects: assets, shared-skill highlighting, image viewer, and all desktop/mobile camera stops pass.`);
 
 const placement=vm.runInContext('placeNetwork',context);
@@ -154,67 +186,12 @@ for(let i=0;i<rectangles.length;i++){
 const offscreen=placement([{x:-100,y:100,w:900,h:900,hero:false}],10)[0];
 assert.equal(offscreen.x,-100,'Viewport edges do not relocate or hide images');
 assert.equal(offscreen.y,100);
-for(const width of [1440,768,390]){
- context.innerWidth=width;context.scrollY=0;vm.runInContext('resize()',context);
- for(let section=-1;section<data.length;section++){
-  const start=section<0?0:3535+section*2500-context.innerHeight*.24;
-  context.scrollY=start+(section<0?10:context.innerHeight*.75+1);vm.runInContext('draw()',context);
-  const placementBefore=vm.runInContext('networkPlacement',context);
-  const gap=width<760?10:16;
-  for(let i=0;i<placementBefore.length;i++)for(const b of placementBefore.slice(i+1)){
-   const a=placementBefore[i];
-   assert.ok(Math.abs(a.x-b.x)>=(a.w+b.w)/2+gap-1e-8||Math.abs(a.y-b.y)>=(a.h+b.h)/2+gap-1e-8,'Every card and label clears its neighbors');
-  }
-  for(const offset of (section<0?[10]:[800,900,1100,800])){
-   context.scrollY=start+offset;vm.runInContext('draw()',context);
-   [...cards,...photoCards].forEach(card=>assert.ok(!/NaN|Infinity/.test(card.style.transform),'Camera-relative positions stay finite'));
-   assert.equal(vm.runInContext('networkPlacement',context),placementBefore,'Do not rerun spacing during scrolling');
-  }
- }
- const before=[...cards,...photoCards].map(card=>card.style.transform);
- context.innerWidth=width+30;vm.runInContext('resize()',context);
- assert.notDeepEqual([...cards,...photoCards].map(card=>card.style.transform),before,'Width changes update placement');
-}
-// Every section boundary must interpolate continuously instead of snapping cards.
-for(const width of [1440,768,390]){
- context.innerWidth=width;vm.runInContext('resize();setStill(false)',context);
- for(let section=0;section<=data.length;section++){
-  const boundary=(section===0?1035:3535+(section-1)*2500)-context.innerHeight*.24;
-  context.scrollY=boundary-.01;vm.runInContext('draw()',context);
-  const before=[...cards,...photoCards].map(card=>card.style.transform.match(/-?[\d.]+/g).map(Number));
-  context.scrollY=boundary+.01;vm.runInContext('draw()',context);
-  [...cards,...photoCards].forEach((card,i)=>{
-   const after=card.style.transform.match(/-?[\d.]+/g).map(Number);
-   assert.ok(Math.hypot(after[0]-before[i][0],after[1]-before[i][1])<1,'Cards must not snap at a focus boundary');
-   assert.ok(Math.abs(after.at(-1)-before[i].at(-1))<.01,'Scale must not snap at a focus boundary');
-  });
-  context.scrollY=boundary-context.innerHeight*.75;vm.runInContext('draw()',context);
-  const sourcePositions=[...cards,...photoCards].map(card=>card.style.transform);
-  context.scrollY=boundary+context.innerHeight*.75;vm.runInContext('draw()',context);
-  assert.ok([...cards,...photoCards].some((card,i)=>card.style.transform!==sourcePositions[i]),'Images travel with the camera instead of staying fixed on screen');
-  context.scrollY=boundary;vm.runInContext('draw()',context);
-  const cachedLayouts=vm.runInContext('networkLayouts.size',context);
-  for(const delta of [-20,-10,10,20]){context.scrollY=boundary+delta;vm.runInContext('draw()',context);}
-  assert.equal(vm.runInContext('networkLayouts.size',context),cachedLayouts,'Camera movement reuses spacing layouts');
- }
-}
-console.log('Network movement: stable spacing, continuous camera transitions, offscreen placement, width updates pass.');
-
-for(const project of data)for(const photo of project.photos)assert.ok(query('#chapters').innerHTML.includes(photo.src),'Every supporting image remains available in the gallery');
-
-vm.runInContext("setSkill('AI systems');setStill(true)",context);
-const stillPositions=[...cards,...photoCards].map(card=>card.style.transform);
-context.scrollY+=100;vm.runInContext('draw()',context);
-assert.deepEqual([...cards,...photoCards].map(card=>card.style.transform),stillPositions,'Still view and skill filters do not cause scroll drift');
-
+context.scrollY=0;context.innerWidth=1440;vm.runInContext('resize()',context);
+const beforeHeight=cards.map(card=>card.style.transform);
+context.innerHeight=700;vm.runInContext('resize()',context);
+assert.notDeepEqual(cards.map(card=>card.style.transform),beforeHeight,'Height-only resize updates the overview bounds');
 const css=fs.readFileSync('site/style.css','utf8');
-assert.ok(!/visibility:hidden/.test(css),'Panels enter naturally instead of being revealed at a focus threshold');
-assert.ok(css.includes('min-height:220vh;padding-bottom:90vh'),'Short projects also have room for longer camera transitions');
-for(const project of data)for(const photo of [project.hero,...project.photos,...project.detailImages])assert.ok(query('#chapters').innerHTML.includes(`width="${photo.width}" height="${photo.height}"`)||query('#nodes').innerHTML.includes(`width="${photo.width}" height="${photo.height}"`));
-console.log('Natural scrolling: visible panels, reserved image space, longer transitions pass.');
-
-context.innerWidth=1440;vm.runInContext('resize();setStill(false)',context);
-const matrixStop=3535+5*2500-context.innerHeight*.24;
-const cameraAt=offset=>{context.scrollY=matrixStop+offset*context.innerHeight;vm.runInContext('draw()',context);return context.window.projectNetworkPose.yaw;};
-const startYaw=cameraAt(-.75),earlyYaw=cameraAt(-.25),lateYaw=cameraAt(.25),endYaw=cameraAt(.75);
-assert.ok(startYaw>earlyYaw&&earlyYaw>lateYaw&&lateYaw>endYaw,'The camera is still transitioning on both sides of the old short transition window');
+assert.ok(css.includes('#chapters .project-chapter{display:block;min-height:0;height:auto;'),'Reading sections have natural height');
+assert.ok(css.includes('body.reading-project #network{opacity:1}'),'The network remains visible while reading');
+assert.ok(css.includes('.network-passage{height:70svh;'),'Every project has a network transition interval');
+console.log('Connected reading: registered hero poses, fixed reading geometry, every project transition, exposed-node navigation, media placement, viewer, and single-player turntable pass.');

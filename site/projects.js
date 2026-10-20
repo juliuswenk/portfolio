@@ -73,6 +73,7 @@ window.PORTFOLIO_PROJECTS = [
         "source": "Aufbau Sketch 3D.png"
       }
     ],
+    "mediaSections": {"detailImages": [4, 0, 3], "photos": [5, 1]},
     "caseStudy": [
       {
         "title": "Context & timeframe",
@@ -177,6 +178,7 @@ window.PORTFOLIO_PROJECTS = [
         "source": "Bildschirmfoto 2026-09-18 um 11.53.55.png"
       }
     ],
+    "mediaSections": {"detailImages": [1, 3], "photos": [4, 4, 5]},
     "caseStudy": [
       {
         "title": "Context & timeframe",
@@ -282,6 +284,7 @@ window.PORTFOLIO_PROJECTS = [
         "source": "IMG_2514.JPG"
       }
     ],
+    "mediaSections": {"detailImages": [4, 0, 5], "photos": [3, 1]},
     "caseStudy": [
       {
         "title": "Context & timeframe",
@@ -387,6 +390,7 @@ window.PORTFOLIO_PROJECTS = [
         "source": "9if.jpg"
       }
     ],
+    "mediaSections": {"detailImages": [1, 3, 1], "photos": [1, 5]},
     "caseStudy": [
       {
         "title": "Context & timeframe",
@@ -492,12 +496,39 @@ window.PORTFOLIO_PROJECTS = [
     ],
     "detailImages": [
       {
-        "src": "assets/matrix-lamp-studio-front.webp",
+        "src": "assets/matrix-lamp-06.webp",
+        "width": 1200,
+        "height": 1600,
+        "title": "Early light and breadboard test",
+        "credit": "",
+        "use": "detail",
+        "source": "IMG_3280.JPG"
+      },
+      {
+        "src": "assets/matrix-lamp-05.webp",
+        "width": 1200,
+        "height": 1600,
+        "title": "Diffuser and LED matrix assembly",
+        "credit": "",
+        "use": "detail",
+        "source": "IMG_3292.JPG"
+      },
+      {
+        "src": "assets/matrix-lamp-network-led-detail.png",
         "width": 1086,
         "height": 1448,
-        "title": "Front view in purple light",
+        "title": "LED matrix and layered construction",
         "credit": "",
-        "source": "Final Lamp/IMG_3333.JPG → Studio/matrix-lamp-studio-front.png",
+        "source": "Final Lamp/IMG_3349.JPG → Studio/matrix-lamp-studio-led-detail.png → Cutouts/matrix-lamp-network-led-detail.png",
+        "use": "detail"
+      },
+      {
+        "src": "assets/matrix-lamp-network-profile.png",
+        "width": 1086,
+        "height": 1448,
+        "title": "Side profile and panel spacing",
+        "credit": "",
+        "source": "Final Lamp/IMG_3342.JPG → Studio/matrix-lamp-studio-profile.png → Cutouts/matrix-lamp-network-profile.png",
         "use": "detail"
       },
       {
@@ -510,24 +541,29 @@ window.PORTFOLIO_PROJECTS = [
         "use": "detail"
       },
       {
-        "src": "assets/matrix-lamp-05.webp",
-        "width": 1200,
-        "height": 1600,
-        "title": "Diffuser and LED matrix assembly",
+        "src": "assets/matrix-lamp-studio-front.webp",
+        "width": 1086,
+        "height": 1448,
+        "title": "Front view in purple light",
         "credit": "",
-        "use": "detail",
-        "source": "IMG_3292.JPG"
-      },
-      {
-        "src": "assets/matrix-lamp-06.webp",
-        "width": 1200,
-        "height": 1600,
-        "title": "Early light and breadboard test",
-        "credit": "",
-        "use": "detail",
-        "source": "IMG_3280.JPG"
+        "source": "Final Lamp/IMG_3333.JPG → Studio/matrix-lamp-studio-front.png",
+        "use": "detail"
       }
     ],
+    "mediaSections": {
+      "detailImages": [
+        3,
+        3,
+        3,
+        3,
+        4,
+        5
+      ],
+      "photos": [
+        3,
+        3
+      ]
+    },
     "caseStudy": [
       {
         "title": "Context & timeframe",
@@ -578,17 +614,55 @@ window.PORTFOLIO_PROJECTS = [
       "Rapid prototyping"
     ],
     "hero": {
-      "src": "assets/carry-the-computation-hero.webp",
-      "width": 1080,
-      "height": 1440,
-      "title": "Controller and receipt printer at the internal presentation",
+      "src": "assets/carry-the-computation-setup.webp",
+      "width": 1122,
+      "height": 1402,
+      "title": "Controller wiring and receipt printer together",
       "credit": "",
       "use": "hero",
-      "source": "Projekte/Carry the computation/Bilder/Chosen/Installation/hero.JPG"
+      "source": "Projekte/Carry the computation/exec-e2079ca6-dd1a-4cab-97e1-df8a335c112b.png"
     },
-    "photos": [],
-    "detailImages": [],
+    "photos": [
+      {
+        "src": "assets/carry-the-computation-controller.webp",
+        "width": 1122,
+        "height": 1402,
+        "title": "Controller switches, LEDs, and exposed construction",
+        "credit": "",
+        "use": "network",
+        "source": "Projekte/Carry the computation/exec-615b3456-5408-41f0-b907-238e089e47f7.png"
+      },
+      {
+        "src": "assets/carry-the-computation-receipts.webp",
+        "width": 1122,
+        "height": 1402,
+        "title": "Printed conversation records and transfer accuracy",
+        "credit": "",
+        "use": "network",
+        "source": "Projekte/Carry the computation/exec-21975189-1039-4e95-896e-45454aea740a.png"
+      }
+    ],
+    "detailImages": [
+      {
+        "src": "assets/carry-the-computation-printer.webp",
+        "width": 1122,
+        "height": 1402,
+        "title": "Thermal printer with the interaction instructions",
+        "credit": "",
+        "use": "detail",
+        "source": "Projekte/Carry the computation/exec-b2942067-4603-4095-aef2-85723391717f.png"
+      }
+    ],
     "summary": "*Carry the Computation* is an interactive installation in which visitors transfer numerical data through an AI’s computation using eight physical switches. Accurate inputs or deliberate errors influence a printed dialogue between two language models, exposing questions of responsibility, dependence, and apparent machine autonomy.",
+    "mediaSections": {
+      "photos": [
+        4,
+        5
+      ],
+      "detailImages": [
+        4
+      ]
+    },
     "caseStudy": [
       {
         "title": "Context & timeframe",

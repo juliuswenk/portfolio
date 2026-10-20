@@ -59,6 +59,11 @@ try {
 
   function render() {
     if (!button.classList.contains('model-ready')) return;
+    if (window.aboutNetworkPose?.hidden) {
+      focused = wavePlaying = false;
+      if (wave) wave.paused = true;
+      return;
+    }
     const now = performance.now();
     const delta = Math.min((now-lastFrame)/1000, .05);
     lastFrame = now;

@@ -72,3 +72,76 @@ img[src="assets/doxa-diagram.png"]{filter:brightness(0) invert(1)}
 .node:has(.project-video-hero){touch-action:pan-y}
 
 .ending .project-description{max-width:470px}
+
+/* Reading stays in page flow while the network holds its project pose. */
+#network{transition:opacity .24s ease}
+body.reading-project #network{opacity:1}
+
+.node .label{color:var(--text);font-size:15px;font-weight:600;line-height:1.25;text-shadow:0 1px 8px var(--bg);margin-top:12px}
+.node .label small{color:#bbc1c2;font-weight:400}
+.node:hover .label,.node:focus-visible .label{color:#91adff}
+#chapters .project-chapter{display:block;min-height:0;height:auto;padding:150px 6% 110px;scroll-margin-top:calc(16px - 24vh);pointer-events:none}
+.project-reading{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(48px,6vw,100px);align-items:start;pointer-events:auto}
+.reading-media,.reading-text{min-width:0}
+.reading-media{display:flex;flex-direction:column;gap:56px}
+.reading-figure{margin:0;min-width:0}
+.reading-figure .detail-image{display:block;width:100%;height:auto;padding:0;background:transparent}
+.reading-figure .image{display:block;position:relative;line-height:0}
+.reading-figure .image>img{display:block;width:100%;height:auto;max-height:80svh;object-fit:contain}
+.reading-figure figcaption{color:#adb3b3;font-size:12px;line-height:1.5;margin-top:14px;max-width:55ch}
+.reading-figure .project-video{margin:0}
+.project-reading h2{font-size:clamp(36px,4vw,62px);line-height:1.04;overflow-wrap:anywhere;margin:0 0 30px}
+.project-reading .eyebrow{color:var(--accent);margin-bottom:20px}
+.project-reading .project-section{margin:0 0 36px}
+.project-reading .project-section h3{margin-bottom:14px}
+.project-reading .project-description p,.project-reading .project-section p,.project-reading .summary p{font-size:16px;line-height:1.7;color:#d2d6d5;margin:0 0 20px}
+.project-reading .summary{margin:0 0 36px}
+.project-reading .project-extras{margin-top:42px}
+.project-reading .project-extras .project-description{margin-top:26px}
+.media-hint{color:var(--muted);font-size:12px;line-height:1.5;margin:12px 0 0}
+.turntable{touch-action:pan-y;cursor:ew-resize}
+.reading-figure .project-video-hero{width:100%;height:100%}
+.reading-figure .project-video-ready .image>img{opacity:0}
+.reading-figure .project-video-ready .project-video-hero{opacity:1}
+body.reading-project header{background:linear-gradient(var(--bg) 90%,transparent)}
+header nav a,header nav button{min-height:44px;display:inline-flex;align-items:center}
+#project-index a,#motion{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+#motion{justify-content:flex-end}
+@media(max-width:999px){
+  #chapters .project-chapter{padding:148px 7% 88px}
+  .project-reading{display:flex;flex-direction:column;gap:0;max-width:650px}
+  .project-reading>*{width:100%;min-width:0}
+  .project-reading .reading-hero{margin-bottom:38px}
+  .project-reading .reading-figure:not(.reading-hero){margin:8px 0 40px}
+  .project-reading .reading-hero .image>img{max-height:62svh}
+  .project-reading h2{font-size:clamp(34px,6vw,52px)}
+  .project-reading .project-section{margin-bottom:28px}
+  .project-reading .project-extras{margin-top:12px}
+}
+@media(max-width:760px){
+  header{padding-top:18px;padding-bottom:10px;gap:8px}
+  header nav{gap:24px}
+  footer{padding:8px 4%;gap:6px}
+  #project-index{gap:2px;flex:1;justify-content:space-between}
+  #project-index a{min-width:20px;padding:8px 0}
+  #motion{min-width:57px;font-size:10px}
+  .view-label{display:none}
+  .node .label{font-size:14px}
+  #chapters .project-chapter{padding-top:170px}
+}
+@media(prefers-reduced-motion:reduce){#network{transition:none}}
+body.still #network{transition:none}
+
+.network-passage{height:70svh;pointer-events:none}
+.project-reading{pointer-events:none}
+.reading-text,.reading-figure,.project-reading>.project-introduction,.project-reading>.project-section,.project-reading>.project-extras{pointer-events:auto}
+.reading-text,.project-reading>.project-introduction,.project-reading>.project-section,.project-reading>.project-extras{background:#111314f5;box-shadow:0 0 22px 18px #111314f5}
+.project-chapter.is-arriving .reading-hero{opacity:0;pointer-events:none}
+.node.landing .label{visibility:hidden}
+body.network-transition #network{opacity:1}
+@media(max-width:999px){.network-passage{height:65svh}}
+
+.reading-figure{background:#111314ed;box-shadow:0 0 16px 10px #111314ed}
+
+.node:hover,.node:focus-visible{opacity:1!important}
+@media(max-width:760px){.node .label{font-size:18px}}
