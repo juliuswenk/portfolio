@@ -176,7 +176,7 @@ assert.ok(page.includes('id="project-menu"')&&page.includes('id="project-names"'
 assert.ok(page.includes('id="network-stage"')&&page.includes('Connected through shared skills'));
 assert.ok(!/rel="canonical"|property="og:image"/.test(page),'No fabricated public URL is published before hosting is chosen');
 const missingPage=fs.readFileSync('site/404.html','utf8');
-assert.ok(missingPage.includes('href="/#overview"')&&!missingPage.includes('<script'),'404 navigation works independently from a nested missing path');
+assert.ok(missingPage.includes('href="/portfolio/#overview"')&&!missingPage.includes('<script'),'404 navigation works independently from a nested missing path');
 const preview=fs.readFileSync('site/assets/social-preview.jpg');
 assert.ok(preview.length>10000&&preview.length<300000,'The social image is prepared as a lightweight real asset');
 assert.ok(fs.statSync('site/assets/hyperreal-spin-web.webm').size<9000000);

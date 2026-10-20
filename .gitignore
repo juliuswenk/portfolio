@@ -1,6 +1,7 @@
 # Only the website, its checks, and required copy sources belong in this repo.
 /*
 !/.gitignore
+!/.github/
 !/README.md
 !/check.cjs
 !/site/
