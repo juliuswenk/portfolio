@@ -36,7 +36,7 @@ Authenticate, then create a private backup repository and push the existing comm
 
 ```sh
 gh auth login --hostname github.com --web
-gh repo create portfolio --private --source=. --remote=origin --push
+gh repo create portfolio-backup --private --source=. --remote=origin --push
 ```
 
 If that repository name is already taken in your account, choose another name.
