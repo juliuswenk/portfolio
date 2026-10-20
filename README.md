@@ -30,16 +30,15 @@ Original project media, design source files, preview screenshots, local notes an
 
 The unused asset exclusions reflect the current website. If a later change uses one of those files, remove its entry from `.gitignore` before committing.
 
-## First upload to GitHub
+## GitHub backup
 
-Authenticate, then create a private backup repository and push the existing commit:
+The private backup repository is [juliuswenk/portfolio-website](https://github.com/juliuswenk/portfolio-website).
+
+To restore it on another computer, authenticate with GitHub and run:
 
 ```sh
-gh auth login --hostname github.com --web
-gh repo create portfolio-backup --private --source=. --remote=origin --push
+gh repo clone juliuswenk/portfolio-website
 ```
-
-If that repository name is already taken in your account, choose another name.
 
 ## Save future changes
 
