@@ -8,6 +8,8 @@ vm.runInContext(fs.readFileSync('site/media.js','utf8'),context);
 const data=context.window.PORTFOLIO_PROJECTS;
 assert.equal(new Set(data.map(p=>p.id)).size,data.length);
 for(const project of data){
+ // Local editorial notes are optional and are not published in the repository.
+ if(fs.existsSync(project.editorialSource)){
  const source=fs.readFileSync(project.editorialSource,'utf8');
  const parts=source.split(/^## (.+)\n/m);
  const sections=new Map();for(let i=1;i<parts.length;i+=2)sections.set(parts[i],parts[i+1].trim());
@@ -17,6 +19,7 @@ for(const project of data){
  assert.equal(project.credits,sections.get('Credits'));
  assert.deepEqual(Array.from(project.caseStudy,section=>section.title),[...sections.keys()].filter(title=>!['At a glance','Context','Skills','Credits'].includes(title)));
  for(const section of project.caseStudy)assert.equal(section.text,sections.get(section.title),'Published copy matches the separate editorial source');
+ }
  assert.match(project.caseStudy[0].title,/^(Experience & intention|Intention & design)$/);
  assert.match(project.caseStudy[1].title,/^My role & /);
  assert.match(project.caseStudy[2].title,/^Outcome & (learning|reflection)$/);

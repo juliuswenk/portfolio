@@ -20,11 +20,11 @@ With Node.js installed, run:
 node check.cjs
 ```
 
-The original project descriptions in `Projekte/` remain intact. Each project’s separate `portfolio-editorial.md` records the revised public story and is checked against `site/projects.js`. Only `site/` needs to be served or deployed.
+The original project descriptions in `Projekte/` remain intact. The published stories live in `site/projects.js`; separate local editorial notes, when present, are checked against them. Only `site/` needs to be served or deployed.
 
 ## Project stories and contact
 
-All seven projects follow one opening overview and compact context, then intention, contribution, outcome and learning, design decisions where useful, and optional implementation depth. The smaller Hyperreal Ravelord study combines sections without adding filler. Five longer stories use native, initially closed Implementation details disclosures. About and the closing invitation include the supplied email, Instagram and GitHub links. See `PROJECT_GUIDE.md`, `EDITORIAL_PLAN.md` and `EDITORIAL_COPY_DRAFT.md` for the editorial conventions and confirmed examples.
+All seven projects follow one opening overview and compact context, then intention, contribution, outcome and learning, design decisions where useful, and optional implementation depth. The smaller Hyperreal Ravelord study combines sections without adding filler. Five longer stories use native, initially closed Implementation details disclosures. About and the closing invitation include the supplied email, Instagram and GitHub links.
 
 Local editorial verification at 390×844 with images loaded and disclosures closed measured DOXA’s complete section at 8,473.6 px before and 4,974.5 px after (about 10.0 to 5.9 screens; 41% shorter). All six figures retain their order and combined 1,758.9 px height. Rendered article text, including captions and navigation, fell from 1,085 to 448 words. Keyboard opening and closing retained the summary’s position; desktop and 320/390px layouts, contact destinations and existing network/media checks passed. Contact apps were not opened, and physical devices/screen readers were not tested.
 
@@ -56,23 +56,23 @@ Verification on 20 October 2026 included desktop/phone layouts, direct links, lo
 
 ## Responsive navigation and composition
 
-The confirmed `AWWWARDS_IMPROVEMENT_PLAN.md` keeps About before the projects, its complete biography and skills visible, and only the CV collapsed. Excess scroll spacing is removed. Following the later About revision, desktop uses a large knee-up avatar portrait that holds beside the scrolling biography; its camera includes the full wave with margins below the header and above the footer. Phones retain the compact stacked avatar. Portrait phones show the introduction above a readable framing of the first three projects; short landscape uses a side-by-side arrangement. The named Projects dialog exposes all seven projects even when their network nodes are offscreen. Phones use the current title, Projects and Still/Motion controls; desktop retains numbered shortcuts.
+The layout keeps About before the projects, its complete biography and skills visible, and only the CV collapsed. Excess scroll spacing is removed. Following the later About revision, desktop uses a large knee-up avatar portrait that holds beside the scrolling biography; its camera includes the full wave with margins below the header and above the footer. Phones retain the compact stacked avatar. Portrait phones show the introduction above a readable framing of the first three projects; short landscape uses a side-by-side arrangement. The named Projects dialog exposes all seven projects even when their network nodes are offscreen. Phones use the current title, Projects and Still/Motion controls; desktop retains numbered shortcuts.
 
 `pairedMedia` in `site/projects.js` identifies adjacent supporting figures that can share a desktop row. All images, their captions, enlargement actions and the existing phone sequence remain. Onward navigation follows the complete project rather than the shorter column. Explicit project navigation remeasures through critical hero readiness and two settled frames, then releases correction; real user input cancels it earlier. Reading media reserves its display area before lazy images arrive. Disclosure changes update geometry without pulling the reader back.
 
 The smaller all-keyframe alpha turntable is generated with `sh site/tools/prepare-turntable.sh`. The original frames, previous WebM and Safari alternative are retained. Metadata checks verify 360 keyframe packets, 25 fps and 14.4 seconds. Representative front/side/back frames were compared at actual display size before promotion. Browser playback and keyboard rotation checks supplement the existing controller tests; physical Safari and touch checks remain a deployment task.
 
-The local social image and standalone 404 are prepared. See `DEPLOYMENT.md` for public canonical/social URLs, custom 404 status/routing and production performance checks that depend on the eventual host. No placeholder public domain is included in the site.
+The local social image and standalone 404 are prepared. Public canonical/social URLs, custom 404 status/routing and production performance checks still depend on the eventual host. No placeholder public domain is included in the site.
 
 ## Embedded image attribution
 
 Published project images, their responsive variants, the avatar still and social card carry embedded XMP metadata: image creator/credit, title, project context, portfolio publisher, rights notice and links back to Julius Wenk’s repository/Instagram. Julius’s own images also include the public portfolio contact email. Melissa Papafio-Roberts’s photography and Conrad Lischewsky’s visualisations retain their image credits separately from Julius’s project contribution. Hyperreal retains the existing-logo reference. No reuse licence is assigned by this metadata.
 
-Run `python3 site/tools/image_attribution.py` after replacing exported images; `prepare-images.py` also calls it after creating variants. The tool updates metadata without re-encoding image pixels and verifies decoded pixels, metadata and idempotence before replacing each file. It leaves project source files untouched. `site/IMAGE_CREDITS.md` is the readable companion credit list. Metadata adds approximately 1–2 KB per image; copies or third-party re-exports can strip it. This is attribution, not a watermark or copy restriction.
+Run `python3 site/tools/image_attribution.py` after replacing exported images; `prepare-images.py` also calls it after creating variants. The tool updates metadata without re-encoding image pixels and verifies decoded pixels, metadata and idempotence before replacing each file. It leaves project source files untouched. The tool also generates a local `site/IMAGE_CREDITS.md` companion credit list. Metadata adds approximately 1–2 KB per image; copies or third-party re-exports can strip it. This is attribution, not a watermark or copy restriction.
 
 ## What is backed up
 
-Git tracks the website code, its currently referenced images, videos and animated model, the checks, their copy sources, this README, and `.gitignore`.
+Git tracks the website code, its currently referenced images, videos and animated model, the checks, the project descriptions, this README, and `.gitignore`. Other Markdown notes remain local and are ignored by Git.
 
 Original project media, design source files, preview screenshots, local notes and settings, and 11 unused web assets are excluded by `.gitignore`. They remain on the computer and need a separate backup if you want to preserve them. No files were deleted to prepare this repository.
 
