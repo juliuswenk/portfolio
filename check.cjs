@@ -79,7 +79,7 @@ assert.ok(query('#supporting-images').innerHTML.includes('https://player.vimeo.c
 assert.equal(data.length,7);
 assert.deepEqual(Array.from(data,p=>p.id),[1,2,3,4,5,6,7]);
 for(const selector of ['#nodes','#chapters','#project-index','#related-1','#related-4'])assert.ok(!/poetics|encryption/i.test(query(selector).innerHTML),'Removed project must not appear in the site');
-assert.ok(query('#chapters').innerHTML.includes('href="#project-5"'));
+assert.ok(query('#project-names').innerHTML.includes('href="#project-5"'),'Hyperreal remains reachable through the named project menu');
 assert.ok(query('#chapters').innerHTML.includes('href="#project-6"'));
 assert.ok(query('#chapters').innerHTML.includes('#project-7'));
 assert.ok(query('#chapters').innerHTML.includes('<strong>Qwen3:8B</strong>'));
@@ -188,7 +188,8 @@ layoutShift=0;context.scrollY=0;context.location.hash='';vm.runInContext('cancel
 assert.equal((query('#project-names').innerHTML.match(/href="#project-/g)||[]).length,7,'Every project has a named route');
 assert.ok(page.includes('<details class="about-cv"><summary>CV'));
 assert.ok(!page.includes('<details class="about-cv" open'));
-assert.ok(published.includes('project-onward'),'Onward actions follow both columns');
+assert.ok(!published.includes('Next project'),'Projects have no Next project links');
+assert.equal((published.match(/class="project-onward"/g)||[]).length,1,'Only the final return-to-overview link remains');
 assert.ok(page.includes('id="project-menu"')&&page.includes('id="project-names"'));
 assert.ok(page.includes('id="network-stage"')&&page.includes('Connected through shared skills'));
 assert.ok(!/rel="canonical"|property="og:image"/.test(page),'No fabricated public URL is published before hosting is chosen');

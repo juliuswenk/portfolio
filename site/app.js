@@ -39,7 +39,7 @@ function projectChapter(p) {
   if(p.video)media.push(`<figure class="reading-figure" data-reading-order="66"><div class="project-video"><iframe data-src="https://player.vimeo.com/video/${escapeHTML(p.video)}?dnt=1" title="${escapeHTML(p.title)} project film" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div><figcaption>${escapeHTML(p.title)} — project film</figcaption></figure>`);
   media.sort((a,b)=>Number(a.match(/data-reading-order="([^"]+)/)[1])-Number(b.match(/data-reading-order="([^"]+)/)[1]));
   text.push(`<div class="project-extras" data-reading-order="1000"><h3 class="section-title">Skills</h3><div class="project-skills" aria-label="Skills in ${escapeHTML(p.title)}">${p.skills.map(skill=>routeSkills.includes(skill)?`<button class="skill-chip" data-skill="${escapeHTML(skill)}" aria-pressed="false">${escapeHTML(skill)}</button>`:`<span class="skill-chip">${escapeHTML(skill)}</span>`).join('')}</div>${p.credits?`<div class="project-description project-credits">${prose(p.credits)}</div>`:''}${p.documentation?`<a class="project-next" href="${escapeHTML(p.documentation)}">Project documentation</a>`:''}<div class="related-projects" id="related-${p.id}"></div></div>`);
-  const onward=`<div class="project-onward" data-reading-order="2000"><a class="project-next" href="${p.id===count?'#overview':'#project-'+(p.id+1)}">${p.id===count?'Return to overview':'Next project'}</a></div>`;
+  const onward=p.id===count?'<div class="project-onward" data-reading-order="2000"><a class="project-next" href="#overview">Return to overview</a></div>':'';
   return `<div class="network-passage" aria-hidden="true"></div><section class="chapter project-chapter" tabindex="-1" id="project-${p.id}" aria-labelledby="title-${p.id}"><article class="project-reading"><div class="reading-media">${media.join('')}</div><div class="reading-text">${text.join('')}</div>${onward}</article></section>`;
 }
 $('#chapters').innerHTML=projects.map(projectChapter).join('');
@@ -74,11 +74,11 @@ function layoutReading() {
   readingLayouts.forEach(layout=>{
     if(layout.stacked===stacked)return;
     if(stacked){
-      [...layout.images,...layout.copy,layout.onward].sort((a,b)=>Number(a.dataset.readingOrder)-Number(b.dataset.readingOrder)).forEach(item=>layout.article.append(item));
+      [...layout.images,...layout.copy,layout.onward].filter(Boolean).sort((a,b)=>Number(a.dataset.readingOrder)-Number(b.dataset.readingOrder)).forEach(item=>layout.article.append(item));
       layout.media.remove();layout.text.remove();
     }else{
       layout.images.forEach(item=>layout.media.append(item));layout.copy.forEach(item=>layout.text.append(item));
-      layout.article.append(layout.media,layout.text,layout.onward);
+      layout.article.append(...[layout.media,layout.text,layout.onward].filter(Boolean));
     }
     layout.stacked=stacked;
   });
