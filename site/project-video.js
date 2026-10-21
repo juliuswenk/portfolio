@@ -14,9 +14,10 @@ if (video) {
   const loading = window.portfolioLoading;
   const loadButton = document.querySelector('[data-load-turntable]');
   const status = document.querySelector('#turntable-status');
-  let enabled = false, requested = false;
+  let enabled = false, requested = false, mobileActivated = false;
+  const compact = () => innerWidth < 1000;
   function loadVideo(explicit = false) {
-    if (!enabled || requested || document.hidden || !explicit && loading.restricted()) return;
+    if (!enabled || requested || document.hidden || !explicit && (loading.restricted() || compact())) return;
     requested = true;
     loadButton.hidden = true;
     status.textContent = 'Loading interactive view…';
@@ -24,7 +25,9 @@ if (video) {
     video.src = appleBrowser && video.canPlayType('video/mp4; codecs="hvc1"') ? video.dataset.hevc : video.dataset.webm;
     video.load();
   }
-  loadButton.addEventListener('click', () => loadVideo(true));
+  function activate(){if(compact())mobileActivated=true;loadVideo(true);sync();}
+  loadButton.addEventListener('click', activate);
+  readingButton?.addEventListener('click',()=>{if(compact())activate();});
   ['pointerenter','focus'].forEach(event => networkButton.addEventListener(event, () => loadVideo()));
   loading.usable.then(() => {
     enabled = true;
@@ -58,18 +61,21 @@ if (video) {
   function sync() {
     const pose = window.projectNetworkPose;
     const inFocus = pose?.phase === 'reading' && pose.projectId === Number(networkButton.dataset.project);
-    loadButton.hidden = requested || !loading.restricted();
+    if(compact()&&focused&&!inFocus)mobileActivated=false;
+    loadButton.hidden = compact() ? mobileActivated : requested || !loading.restricted();
     if (pose?.projectId === Number(networkButton.dataset.project)) loadVideo();
     const destination=inFocus&&readingButton?readingButton:networkButton;
     if(destination!==button){
       button.classList.remove('project-video-ready');
       (destination.querySelector('.image')||destination).append(video);
       button=destination;
-      if(video.readyState>=2)button.classList.add('project-video-ready');
+      if(video.readyState>=2&&(!compact()||mobileActivated))button.classList.add('project-video-ready');
     }
     if (inFocus && !focused) { completed = false; reset = true; }
     focused = inFocus;
-    const blocked = document.hidden || !loading.motionAllowed();
+    const blocked = document.hidden || !loading.motionAllowed() || compact()&&!mobileActivated;
+    if(compact()&&!mobileActivated)button.classList.remove('project-video-ready');
+    else if(video.readyState>=2)button.classList.add('project-video-ready');
     const next = blocked ? 'paused' : focused ? completed ? 'manual' : 'intro' : pose?.overview ? 'overview' : 'paused';
     if (!requested || video.readyState < 1) return;
     if (reset) { video.pause(); video.currentTime = 0; frame = 0; reset = false; }
@@ -86,7 +92,7 @@ if (video) {
     }
   }
 
-  video.addEventListener('loadeddata', () => { status.textContent = ''; button.classList.add('project-video-ready'); sync(); });
+  video.addEventListener('loadeddata', () => { status.textContent = ''; sync(); });
   video.addEventListener('ended', () => {
     if (mode !== 'intro') return;
     completed = true;

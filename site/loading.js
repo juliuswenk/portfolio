@@ -57,7 +57,7 @@
   }
   function ready() {
     const route = /^#project-\d+$/.test(location.hash) ? document.querySelector(`${location.hash} .reading-hero img`) : null;
-    const images = route ? [route] : [...document.querySelectorAll('#nodes .node img')];
+    const images = route ? [route] : innerWidth<1000 ? [document.querySelector('.avatar-still')] : [...document.querySelectorAll('#nodes .node img')];
     Promise.all(images.map(imageSettled)).then(() => requestAnimationFrame(reveal));
   }
 
@@ -66,7 +66,7 @@
     avatarStarted = true;
     avatarButton.hidden = true;
     avatarStatus.textContent = 'Loading animated avatar…';
-    import('./about-model.js?v=about-portrait-3').catch(() => avatarFailed());
+    import('./about-model.js?v=mobile-portrait-2').catch(() => avatarFailed());
   }
   function avatarFailed() {
     avatarStatus.textContent = 'Animation unavailable. You can still explore About.';

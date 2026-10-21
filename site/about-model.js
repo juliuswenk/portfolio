@@ -21,7 +21,7 @@ try {
   camera.lookAt(0, 0, 0);
   const figure = new THREE.Group();
   scene.add(figure);
-  let portraitBounds=null, cameraKey='', portraitMix=0;
+  let portraitBounds=null, bustBounds=null, cameraKey='', portraitMix=0;
   let head;
   let headPose;
   let mixer, wave;
@@ -53,24 +53,27 @@ try {
       mixer.update(0);
       mixer.addEventListener('finished', () => {wavePlaying=false;});
     }
-    const frameBones=[], knees=[];
+    const frameBones=[], knees=[], chest=[];
     gltf.scene.traverse(object => {
       if (!object.isBone) return;
       if (/HeadTop_End$|HandIndex4$/i.test(object.name)) frameBones.push(object);
       if (/(?:Left|Right)Leg$/i.test(object.name)) knees.push(object);
+      if (/Spine2$/i.test(object.name)) chest.push(object);
     });
     if (frameBones.length && knees.length) {
       // Measure the full wave once so the portrait camera never crops the raised hand.
       const range=new THREE.Box3(), point=new THREE.Vector3();
-      let kneeY=Infinity;
+      let kneeY=Infinity,chestY=Infinity;
       if (wave) wave.paused=false;
       for (let i=0;i<=36;i++) {
         if (mixer) mixer.setTime(gltf.animations[0].duration*i/36);
         scene.updateMatrixWorld(true);
         frameBones.forEach(bone=>range.expandByPoint(bone.getWorldPosition(point)));
         knees.forEach(bone=>{kneeY=Math.min(kneeY,bone.getWorldPosition(point).y);});
+        chest.forEach(bone=>{chestY=Math.min(chestY,bone.getWorldPosition(point).y);});
       }
       portraitBounds={top:range.max.y+.08,bottom:kneeY-.08,left:range.min.x-.12,right:range.max.x+.12};
+      bustBounds={...portraitBounds,bottom:Number.isFinite(chestY)?chestY-.22:portraitBounds.bottom};
       if (wave) {wave.reset().play();wave.paused=true;mixer.update(0);}
     }
     if (head) headPose = head.quaternion.clone();
@@ -92,8 +95,10 @@ try {
     // Remove the previous pointer offset before the mixer writes the animated head pose.
     if (headPose) head.quaternion.copy(headPose);
     const moving = window.portfolioLoading.motionAllowed() && !document.hidden;
+    const compact=!!window.aboutNetworkPose?.compact;
+    if(compact)targetX=targetY=0;
     const portraitTarget=window.aboutNetworkPose?.portrait&&portraitBounds?1:0;
-    portraitMix=moving?portraitMix+(portraitTarget-portraitMix)*(1-Math.exp(-delta*9)):portraitTarget;
+    portraitMix=moving&&!compact?portraitMix+(portraitTarget-portraitMix)*(1-Math.exp(-delta*9)):portraitTarget;
     if (Math.abs(portraitTarget-portraitMix)<.001) portraitMix=portraitTarget;
     const inFocus = !!window.aboutNetworkPose?.focused && moving && (!portraitTarget || portraitMix>.97);
     if (wave && inFocus !== focused) {
@@ -111,11 +116,11 @@ try {
     if (canvas.width !== Math.round(bufferWidth * renderer.getPixelRatio()) || canvas.height !== Math.round(bufferHeight * renderer.getPixelRatio())) {
       renderer.setSize(bufferWidth, bufferHeight, false);
     }
-    const nextCameraKey=`${width}:${height}:${portraitMix}`;
+    const nextCameraKey=`${width}:${height}:${portraitMix}:${compact}`;
     if (cameraKey!==nextCameraKey) {
       cameraKey=nextCameraKey;
       if (portraitBounds && portraitMix>0) {
-        const frame=portraitBounds, aspect=width/height;
+        const frame=compact?bustBounds:portraitBounds, aspect=width/height;
         const viewHeight=Math.max(frame.top-frame.bottom,(frame.right-frame.left)/aspect);
         const halfWidth=viewHeight*aspect/2, centerX=(frame.left+frame.right)/2;
         camera.left=THREE.MathUtils.lerp(-1,centerX-halfWidth,portraitMix);
@@ -144,6 +149,7 @@ try {
   }
 
   addEventListener('pointermove', event => {
+    if(window.aboutNetworkPose?.compact)return;
     const box = button.getBoundingClientRect();
     targetX = THREE.MathUtils.clamp((event.clientX-box.left-box.width/2)/(innerWidth*.45), -1, 1) * .38;
     targetY = THREE.MathUtils.clamp((event.clientY-box.top-box.height/2)/(innerHeight*.45), -1, 1) * .22;

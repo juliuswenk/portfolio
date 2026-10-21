@@ -18,15 +18,15 @@ The website presents seven projects as a spatial network connected through share
 
 The opening network links the projects through their shared disciplines. Selecting a project brings its main image into the reading layout, while the network remains visible as context. Scrolling between projects moves through the network to the next work.
 
-Desktop case studies place media on the left and text on the right. On phones, images and text form a single reading sequence. Each project introduces its intention, Julius’s contribution, and its outcome, with further technical detail available in expandable sections where relevant. Images can be enlarged for closer inspection.
+At widths of 1000px and above, case studies place media on the left and text on the right. Below 1000px, a large portrait greets visitors above the introduction, and the network gives way to an ordinary scrolling page: About, then project heroes, summaries, stories, and supporting media. Each project introduces its intention, Julius’s contribution, and its outcome, with further technical detail available in expandable sections where relevant. Images can be enlarged for closer inspection.
 
-The About section introduces Julius’s background, skills, and experience alongside an animated 3D portrait. Hyperreal Ravelord includes an interactive necklace turntable. A named Projects menu provides direct access to every case study.
+The About section introduces Julius’s background, skills, and experience. Desktop pairs it with an animated 3D portrait; smaller screens place that portrait in the opening, where its greeting replays on return. Hyperreal Ravelord includes an interactive necklace turntable. A named Projects menu provides direct access to every case study.
 
 ## Motion and loading
 
-Responsive images and deferred media loading keep the opening focused on browsing. A brief branded loading view offers a way to continue while images arrive. The avatar begins as a still image, with its animated model loading separately; interactive video loads when a visitor approaches or engages with its project.
+Responsive images and deferred media loading keep the opening focused on browsing. A brief branded loading view offers a way to continue while images arrive. The avatar begins as a still image, with its animated model loading separately; on desktop, interactive video loads when a visitor approaches or engages with its project. Below 1000px, the necklace remains a still until explicitly activated.
 
-Still and Motion views accommodate different preferences. Reduced-motion and reported constrained connections influence automatic media loading, with explicit controls available for optional animation. Navigation supports keyboard access.
+Still and Motion views accommodate different preferences. Reduced-motion and reported constrained connections influence automatic media loading, with explicit controls available for optional animation. Navigation supports keyboard access. Smaller screens use header navigation and a normal page footer instead of a fixed bottom bar.
 
 The site uses HTML, CSS, and JavaScript, with Three.js for the animated portrait and Vimeo for embedded project films.
 

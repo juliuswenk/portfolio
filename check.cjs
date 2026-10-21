@@ -35,7 +35,7 @@ const gltf=JSON.parse(model.subarray(20,20+model.readUInt32LE(12)).toString());
 const headIndex=gltf.nodes.findIndex(node=>/^(?:mixamorig:?)?Head$/i.test(node.name));
 assert.equal(gltf.animations.length,1,'The character needs the wave animation');
 assert.ok(headIndex>=0&&gltf.skins.some(skin=>skin.joints.includes(headIndex)),'The character needs a skinned Head bone');
-const element=()=>({offsetWidth:88,offsetHeight:105,dataset:{},getBoundingClientRect:()=>({left:0,right:0,top:0,bottom:0,width:0,height:0}),querySelector:()=>null,style:{setProperty(name,value){this[name]=value;}},children:[],after(){},focus(){},getAttribute(){return null;},classList:{values:new Set(),toggle(name,on){on?this.values.add(name):this.values.delete(name);},contains(name){return this.values.has(name);}},addEventListener(){},setAttribute(){},removeAttribute(){},showModal(){},getContext(){return new Proxy({},{get:()=>()=>{}});}});
+const element=()=>({offsetWidth:88,offsetHeight:105,dataset:{},getBoundingClientRect:()=>({left:0,right:0,top:0,bottom:0,width:0,height:0}),querySelector:()=>null,style:{setProperty(name,value){this[name]=value;}},children:[],append(...children){this.children.push(...children);children.forEach(child=>child.parentElement=this);},after(){},focus(){},getAttribute(){return null;},classList:{values:new Set(),add(...names){names.forEach(name=>this.values.add(name));},remove(...names){names.forEach(name=>this.values.delete(name));},toggle(name,on){on?this.values.add(name):this.values.delete(name);},contains(name){return this.values.has(name);}},addEventListener(){},setAttribute(){},removeAttribute(){},showModal(){},getContext(){return new Proxy({},{get:()=>()=>{}});}});
 const disclosureEvents={};
 const disclosure={...element(),addEventListener(name,fn){disclosureEvents[name]=fn;}};
 const cards=data.map(()=>({...element(),offsetWidth:155,offsetHeight:220})),aboutChapter={...element(),offsetHeight:2500,getBoundingClientRect:()=>({top:1035-context.scrollY})},chapters=data.map((_,i)=>({...element(),offsetHeight:2500,getBoundingClientRect:()=>({top:3535+i*2500+layoutShift-context.scrollY})}));
@@ -89,13 +89,28 @@ assert.ok(query('#chapters').innerHTML.includes('https://juliuswenk.github.io/ve
 assert.equal(vm.runInContext("prose('<script> & **safe**')",context),'<p>&lt;script&gt; &amp; <strong>safe</strong></p>');
 for(const width of [1440,1000,768,390,320]){
  context.innerWidth=width;context.scrollY=0;vm.runInContext('resize()',context);
+ if(width<1000){
+  assert.equal(query('#about-node').parentElement,query('#opening-portrait'),'Compact portrait belongs to the opening document flow');
+  assert.equal(context.window.aboutNetworkPose.compact,true);
+  assert.ok([...cards,...photoCards].every(card=>card.tabIndex===-1),'The compact view does not expose hidden network controls');
+  assert.ok(vm.runInContext("picture(projects[0].hero,'network','eager')",context).includes('data-src='),'Hidden network images defer their sources');
+  const entries=vm.runInContext('projectEntries',context);
+  for(const entry of entries){
+   context.scrollY=entry.start;vm.runInContext('draw()',context);
+   assert.notEqual(context.document.body.dataset.networkPhase,'transition','Compact reading has no camera transition phase');
+   context.scrollY=entry.open;vm.runInContext('draw()',context);
+   assert.equal(context.document.body.dataset.networkPhase,'reading');
+   assert.ok(!context.document.body.classList.contains('network-transition'));
+  }
+  continue;
+ }
  assert.ok(cards.every(card=>card.style.visibility==='visible'),'Overview heroes are visible');
  assert.ok(photoCards.every(card=>card.style.visibility==='hidden'&&card.tabIndex===-1),'Supporting previews remain secondary');
  vm.runInContext('preview(0)',context);
  photoCards.forEach((card,k)=>assert.equal(card.style.visibility,width>=1000&&vm.runInContext(`networkMedia[${k}].projectIndex`,context)===0?'visible':'hidden'));
  vm.runInContext('preview(-1)',context);
  context.scrollY=1035;vm.runInContext('draw()',context);
- assert.equal(context.window.aboutNetworkPose.portrait,width>=1000,'Only desktop About uses the large portrait');
+ assert.equal(context.window.aboutNetworkPose.portrait,true,'Desktop About uses the large portrait');
  const avatar=query('#about-node'),portraitTransform=avatar.style.transform;
  if(width>=1000){
   assert.ok(parseFloat(avatar.style.width)>=vm.runInContext('aboutFrame.w',context),'The character fills the shared media column');
@@ -103,7 +118,7 @@ for(const width of [1440,1000,768,390,320]){
   assert.ok(parseFloat(avatar.style.height)>context.innerHeight*.7,'The portrait fills the usable viewport');
   context.scrollY+=300;vm.runInContext('draw()',context);
   assert.equal(avatar.style.transform,portraitTransform,'The portrait holds its framing beside the scrolling biography');
- }else assert.equal(avatar.style.height,'140px','Phone About retains its stacked composition');
+ }
  const entries=vm.runInContext('projectEntries',context);
  for(let i=0;i<data.length;i++){
   const entry=entries[i];context.scrollY=entry.open;vm.runInContext('draw()',context);
@@ -298,6 +313,26 @@ videoStill=false;videoContext.window.projectNetworkPose={phase:'reading',overvie
 assert.equal(video.host,videoButton,'The player returns to the overview host');
 videoContext.window.projectNetworkPose={phase:'reading',overview:false,projectId:5};networkEvents.networkpose();assert.ok(!video.paused&&video.currentTime===0,'Re-entering focus replays once');
 videoEvents.error();assert.ok(video.paused&&turntableStatus.textContent.includes('unavailable'),'Failed motion keeps a useful poster fallback');
+// Compact motion requires deliberate intent even when its project is approached.
+const compactVideoEvents={},compactHostEvents={},compactNetworkEvents={},compactLoadEvents={};
+const compactHost={...videoButton,querySelector(){return this;},addEventListener(name,fn){compactHostEvents[name]=fn;}};
+const compactReading={...compactHost};
+const compactMovie={...video,src:undefined,loads:0,paused:true,currentTime:0,closest:()=>compactHost,addEventListener(name,fn){compactVideoEvents[name]=fn;}};
+const compactLoad={hidden:true,addEventListener(name,fn){compactLoadEvents[name]=fn;}};
+let compactEnable;
+const compactContext=vm.createContext({innerWidth:390,console,requestAnimationFrame:fn=>fn(),navigator:{userAgent:'Chrome'},window:{projectNetworkPose:{phase:'reading',projectId:5},portfolioLoading:{usable:{then(fn){compactEnable=fn;}},restricted:()=>false,motionAllowed:()=>true}},document:{hidden:false,querySelector:selector=>selector==='[data-load-turntable]'?compactLoad:selector==='#turntable-status'?{}:selector.startsWith('.turntable')?compactReading:compactMovie,addEventListener(){}},addEventListener(name,fn){compactNetworkEvents[name]=fn;}});
+vm.runInContext(fs.readFileSync('site/project-video.js','utf8').replace('export function','function'),compactContext);
+compactEnable();compactHostEvents.focus();compactNetworkEvents.networkpose();
+assert.equal(compactMovie.src,undefined,'Approach and network intent cannot download compact turntable media');
+assert.equal(compactLoad.hidden,false,'A visible button offers deliberate motion loading');
+compactLoadEvents.click();compactVideoEvents.loadeddata();
+assert.equal(compactMovie.loads,1);assert.equal(compactMovie.paused,false,'A deliberate tap starts the compact turntable');
+compactContext.window.projectNetworkPose={phase:'reading',projectId:6};compactNetworkEvents.networkpose();
+assert.equal(compactMovie.paused,true,'Leaving the project stops compact motion');
+compactContext.window.projectNetworkPose={phase:'reading',projectId:5};compactNetworkEvents.networkpose();
+assert.equal(compactMovie.paused,true,'Returning does not silently restart project animation');
+assert.equal(compactLoad.hidden,false);
+
 console.log(`${data.length} projects: assets, shared-skill highlighting, image viewer, and all desktop/mobile camera stops pass.`);
 
 for(const [viewWidth,viewHeight] of [[1000,700],[1440,600],[1440,900],[1920,1080],[2048,1228]]){
@@ -335,7 +370,7 @@ const compactGltf=JSON.parse(compactModel.subarray(20,20+compactModel.readUInt32
 const compactHead=compactGltf.nodes.findIndex(node=>/^(?:mixamorig:?)?Head$/i.test(node.name));
 assert.ok(compactModel.length<3000000,'Avatar stays below 3 MB');
 assert.equal(compactGltf.animations.length,1);
-for(const name of ['HeadTop_End','LeftHandIndex4','RightHandIndex4','LeftLeg','RightLeg'])assert.ok(compactGltf.nodes.some(node=>node.name.endsWith(name)),'The portrait framing needs wave and knee landmarks');
+for(const name of ['HeadTop_End','LeftHandIndex4','RightHandIndex4','LeftLeg','RightLeg','Spine2'])assert.ok(compactGltf.nodes.some(node=>node.name.endsWith(name)),'The portrait framing needs wave, chest, and knee landmarks');
 assert.ok(compactHead>=0&&compactGltf.skins.some(skin=>skin.joints.includes(compactHead)));
 assert.ok(fs.statSync('site/assets/avatar-still.webp').size<30000);
 assert.ok(!fs.readFileSync('site/index.html','utf8').includes('src="about-model.js'),'The renderer is not an opening module');

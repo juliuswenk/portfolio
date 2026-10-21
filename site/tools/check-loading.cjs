@@ -1,18 +1,19 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync('site/loading.js','utf8').replace(/import\('\.\/about-model\.js\?v=[^']+'\)/,'loadAvatarModule()');
 const flush=async()=>{for(let i=0;i<5;i++)await Promise.resolve();};
-function opening({direct=false,saveData=false,reduced=false}={}){
+function opening({direct=false,saveData=false,reduced=false,compact=false}={}){
  const events={},timers=[],idle=[];
  let still=reduced,imports=0,focusTarget=null;
  const element=()=>({hidden:true,dataset:{},events:{},textContent:'',addEventListener(name,fn){this.events[name]=fn;},focus(){focusTarget=this;}});
  const images=Array.from({length:7},()=>({...element(),complete:false}));
  const hero={...element(),complete:false,dataset:{src:'reading.webp',srcset:'reading.webp 960w',sizes:'50vw'}};
+ const portrait={...element(),complete:false};
  const view={...element(),contains:()=>false},main=element(),continueButton=element(),delay=element(),avatarButton=element(),status=element(),overview=element();
  const body={children:[view,main],classList:{add(){},remove(){},contains:()=>still}};
- const selectors={'#site-loading':view,'#continue-browsing':continueButton,'#loading-delay':delay,'[data-load-avatar]':avatarButton,'#avatar-status':status,'#project-6 .reading-hero img':hero,'#overview':overview};
- const context=vm.createContext({window:{aboutNetworkPose:{focused:false,hidden:false},requestIdleCallback:true},document:{body,hidden:false,activeElement:null,querySelector:s=>selectors[s],querySelectorAll:()=>images,addEventListener(){}},navigator:{connection:{saveData,effectiveType:'4g',addEventListener(){}}},matchMedia:()=>({matches:reduced,addEventListener(){}}),location:{hash:direct?'#project-6':''},Event:class{},dispatchEvent(){},addEventListener(name,fn){events[name]=fn;},setTimeout(fn,ms){timers.push({fn,ms});},requestAnimationFrame:fn=>fn(),requestIdleCallback:fn=>idle.push(fn),loadAvatarModule(){imports++;return Promise.resolve();}});
+ const selectors={'#site-loading':view,'#continue-browsing':continueButton,'#loading-delay':delay,'[data-load-avatar]':avatarButton,'#avatar-status':status,'#project-6 .reading-hero img':hero,'#overview':overview,'.avatar-still':portrait};
+ const context=vm.createContext({innerWidth:compact?390:1440,window:{aboutNetworkPose:{focused:false,hidden:false},requestIdleCallback:true},document:{body,hidden:false,activeElement:null,querySelector:s=>selectors[s],querySelectorAll:()=>images,addEventListener(){}},navigator:{connection:{saveData,effectiveType:'4g',addEventListener(){}}},matchMedia:()=>({matches:reduced,addEventListener(){}}),location:{hash:direct?'#project-6':''},Event:class{},dispatchEvent(){},addEventListener(name,fn){events[name]=fn;},setTimeout(fn,ms){timers.push({fn,ms});},requestAnimationFrame:fn=>fn(),requestIdleCallback:fn=>idle.push(fn),loadAvatarModule(){imports++;return Promise.resolve();}});
  vm.runInContext(source,context);
- return {api:context.window.portfolioLoading,view,main,images,hero,continueButton,delay,avatarButton,status,timers,idle,events,context,imports:()=>imports,setStill:value=>{still=value;}};
+ return {api:context.window.portfolioLoading,view,main,images,hero,portrait,continueButton,delay,avatarButton,status,timers,idle,events,context,imports:()=>imports,setStill:value=>{still=value;}};
 }
 module.exports=(async()=>{
  let test=opening();
@@ -27,6 +28,10 @@ module.exports=(async()=>{
  test=opening();test.api.ready();
  test.images.forEach((image,i)=>image.events[i?'load':'error']());await flush();
  assert.equal(test.view.hidden,true,'A failed opening image counts as settled');
+ test=opening({compact:true});test.api.ready();
+ assert.ok(test.images.every(image=>!image.events.load),'Compact opening never waits for hidden network images');
+ assert.equal(test.imports(),0,'The animated portrait does not block readiness');
+ test.portrait.events.load();await flush();assert.equal(test.view.hidden,true,'The still portrait is enough to open the compact site');
  test=opening({direct:true});test.api.ready();
  assert.equal(test.hero.src,'reading.webp','A direct link prioritizes its reading hero');
  assert.ok(test.images.every(image=>!image.events.load),'A direct link does not wait for overview images');
