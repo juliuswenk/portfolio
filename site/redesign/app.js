@@ -109,6 +109,8 @@ window.addEventListener('popstate', event => {
   showRoute(true);
 });
 document.addEventListener('keydown', event => {
+  document.body.dataset.input = 'keyboard';
   if (event.key === 'Escape' && document.body.dataset.view !== 'home') { event.preventDefault(); navigate('#/'); }
 });
+document.addEventListener('pointerdown', () => { document.body.dataset.input = 'pointer'; }, { capture: true });
 showRoute(false, location.hash.startsWith('#/projects/') || location.hash === '#/about');

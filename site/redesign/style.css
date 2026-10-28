@@ -17,7 +17,9 @@ body[data-collection="loading"] #viewer { visibility: hidden; }
 body[data-collection="ready"] .collection { display: block; pointer-events: none; }
 body[data-collection="ready"] .project-object { position: absolute; margin: 0; opacity: 0; pointer-events: none; aspect-ratio: auto; }
 body[data-collection="ready"] .project-object img { visibility: hidden; }
-body[data-collection="ready"] .project-object:focus-visible { opacity: 1; outline: 2px solid #fff; outline-offset: 7px; border-radius: 8px; }
+.project-object:focus-visible { outline: none; }
+body[data-input="keyboard"] .project-object:focus-visible { outline: 2px solid #fff; outline-offset: 8px; }
+body[data-collection="ready"][data-input="keyboard"] .project-object:focus-visible { opacity: 1; outline-offset: 7px; border-radius: 8px; }
 .loading-screen { position: fixed; inset: 100px var(--edge) 50px; z-index: 3; display: grid; place-items: center; background: #000; }
 .loading-screen p { font-size: 14px; font-weight: 400; letter-spacing: .08em; }
 .fallback-status { position: fixed; left: var(--edge); right: var(--edge); bottom: max(18px, env(safe-area-inset-bottom)); margin: 0; text-align: center; color: #aaa; font-size: 12px; line-height: 1.5; }

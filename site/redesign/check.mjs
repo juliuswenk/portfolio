@@ -100,12 +100,16 @@ function harness(hash = '') {
   };
   browser.window.scrollTo = ({ top }) => browser.scrollY = top;
   vm.createContext(browser); vm.runInContext(app, browser);
-  return { browser, views, timers, controller, imports: () => imports, go: nextHash => vm.runInContext(`navigate(${JSON.stringify(nextHash)})`, browser), ready: () => resolveModule({ createCollection: async () => controller }), fail: () => rejectModule(new Error('Network unavailable')) };
+  return { browser, views, timers, controller, imports: () => imports, go: nextHash => vm.runInContext(`navigate(${JSON.stringify(nextHash)})`, browser), ready: () => resolveModule({ createCollection: async () => controller }), fail: () => rejectModule(new Error('Network unavailable')), key: key => listeners.keydown({ key, preventDefault() {} }), point: () => listeners.pointerdown() };
 }
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const direct = harness('#/projects/doxa');
 assert.equal(direct.imports(), 0, 'Direct content does not wait for 3D');
 assert.equal(direct.browser.document.body.dataset.view, 'project');
+direct.key('Tab');
+assert.equal(direct.browser.document.body.dataset.input, 'keyboard');
+direct.point();
+assert.equal(direct.browser.document.body.dataset.input, 'pointer', 'Touch and pointer input clear keyboard-only outlines before programmatic focus');
 direct.go('#/');
 assert.equal(direct.imports(), 1);
 assert.equal(direct.browser.document.body.dataset.collection, 'loading');
