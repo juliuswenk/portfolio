@@ -8,11 +8,11 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
-import { createDrop } from './drop-physics.mjs';
+import { createDrop } from './drop-physics.mjs?v=acceleration-1';
 import { applyCobaltScattering } from './cobalt-sss.mjs';
 import { projectAssets } from './project-assets.mjs';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
-import { setupMotion } from './motion.mjs';
+import { setupMotion } from './motion.mjs?v=acceleration-1';
 
 export async function createCollection({ canvas, collection, signal, isHome, onOpen, onFailure }) {
   signal.throwIfAborted();
@@ -193,7 +193,6 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
         needsRender = true;
         return simulation.shake(impulse);
       },
-      onTilt: tilt => { if (!resizing && !pointer) simulation.tilt(tilt); },
       onStop() {
         cancelPointer(); simulation.endMotion();
         accumulator = 0; needsRender = true;

@@ -37,7 +37,7 @@ function quaternion([x, y, z]) {
 let drop, previousLayout;
 for (const [width, height, top] of [[1440, 900, 108], [390, 844, 92], [844, 390, 66], [320, 568, 92], [2560, 1440, 108], [1440, 900, 108]]) {
   const margin = width < 800 ? 20 : width * .025;
-  const layout = collectionLayout({ width, height, left: margin, right: width - margin, top, bottom: height - (height <= 500 ? 46 : 66) }, footprints);
+  const layout = collectionLayout({ width, height, left: margin, right: width - margin, top, bottom: height - 66 }, footprints);
   const points = clouds.map(cloud => Float32Array.from(cloud, value => value * layout.scale));
   const snapshot = drop ? { ...drop.snapshot(), scaleRatio: layout.scale / previousLayout.scale } : undefined;
   const poses = layout.positions.map((position, index) => ({ ...position, rotation: snapshot?.entries[index].target || quaternion(projectAssets[index].rotation) }));
@@ -75,13 +75,13 @@ for (const [width, height, top] of [[1440, 900, 108], [390, 844, 92], [844, 390,
       const tx = 2 * (q.y * z - q.z * y), ty = 2 * (q.z * x - q.x * z), tz = 2 * (q.x * y - q.y * x);
       const wx = p.x + x + q.w * tx + q.y * tz - q.z * ty, wy = p.y + y + q.w * ty + q.z * tx - q.x * tz, wz = p.z + z + q.w * tz + q.x * ty - q.y * tx;
       const px = width / 2 + (wx - layout.cameraX) * focal / (16 - wz), py = height / 2 - (wy - layout.cameraY) * focal / (16 - wz);
-      assert.ok(px >= margin - 2 && px <= width - margin + 2 && py >= top - 2 && py <= height - (height <= 500 ? 46 : 66) + 2, `Every model remains visible after resize to ${width}×${height}`);
+      assert.ok(px >= margin - 2 && px <= width - margin + 2 && py >= top - 2 && py <= height - 66 + 2, `Every model remains visible after resize to ${width}×${height}`);
     }
   }
 }
 drop.dispose();
 
-const app = fs.readFileSync(new URL('./app.js', import.meta.url), 'utf8').replace(/^import .+;$/gm, '').replace("import('./scene.mjs')", 'testModule()');
+const app = fs.readFileSync(new URL('./app.js', import.meta.url), 'utf8').replace(/^import .+;$/gm, '').replace(/import\('\.\/scene\.mjs(?:\?[^']*)?'\)/, 'testModule()');
 function harness(hash = '') {
   const listeners = {}, views = new Map(), timers = new Map();
   let resolveModule, rejectModule, counter = 0, imports = 0;

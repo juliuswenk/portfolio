@@ -1,8 +1,8 @@
 const vector = value => value && ['x', 'y', 'z'].every(axis => Number.isFinite(value[axis])) ? [value.x, value.y, value.z] : null;
 
 export function createShakeDetector() {
-  let gravity, firstTime, lastTime, peak, lastShake = -Infinity;
-  function reset() { gravity = firstTime = lastTime = peak = undefined; lastShake = -Infinity; }
+  let gravity, firstTime, lastTime, lastImpulse = -Infinity;
+  function reset() { gravity = firstTime = lastTime = undefined; lastImpulse = -Infinity; }
   function sample(event, now, angle = 0) {
     const total = vector(event.accelerationIncludingGravity);
     let linear = vector(event.acceleration);
@@ -22,24 +22,19 @@ export function createShakeDetector() {
     }
     const radians = (Number.isFinite(angle) ? angle : 0) * Math.PI / 180;
     const rotate = ([x, y]) => ({ x: x * Math.cos(radians) + y * Math.sin(radians), y: -x * Math.sin(radians) + y * Math.cos(radians) });
-    const tilt = rotate(gravity || [0, 0, 0]);
-    tilt.x = -tilt.x; tilt.y = -tilt.y;
+    const acceleration = rotate(linear);
     let shake = null;
-    const strength = Math.hypot(...linear);
-    // shortcut: initial shake thresholds need calibration on real phones before tuning sensitivity.
-    if (now - firstTime >= 200 && strength >= 12 && now - lastShake >= 750) {
-      if (peak && now - peak.time >= 60 && now - peak.time <= 650 && linear.reduce((sum, value, index) => sum + value * peak.vector[index], 0) / (strength * peak.strength) < -.25) {
-        const impulse = rotate(linear);
-        shake = { x: -impulse.x, y: -impulse.y };
-        lastShake = now; peak = undefined;
-      } else if (!peak || now - peak.time > 650) peak = { time: now, vector: linear, strength };
+    // shortcut: the acceleration dead zone needs calibration on real phones.
+    if (now - firstTime >= 200 && Math.hypot(acceleration.x, acceleration.y) >= 6 && now - lastImpulse >= 120) {
+      shake = { x: -acceleration.x, y: -acceleration.y };
+      lastImpulse = now;
     }
-    return { tilt, shake };
+    return { shake };
   }
   return { sample, reset };
 }
 
-export function setupMotion({ button, onShake, onTilt, onStop }) {
+export function setupMotion({ button, onShake, onStop }) {
   const MotionEvent = window.DeviceMotionEvent;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const touch = matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -57,7 +52,7 @@ export function setupMotion({ button, onShake, onTilt, onStop }) {
   function noSensor() {
     unavailable = true; enabled = false;
     refresh();
-    button.textContent = 'Motion unavailable';
+    button.title = 'Device motion unavailable';
     button.setAttribute('aria-label', 'Device motion unavailable');
     button.hidden = !active || reducedMotion.matches;
     button.disabled = true;
@@ -74,7 +69,6 @@ export function setupMotion({ button, onShake, onTilt, onStop }) {
       clearTimeout(timer);
       timer = setTimeout(() => tick(), 8000);
     }
-    if (deadline) onTilt(input.tilt);
   }
   function refresh() {
     const canListen = eligible() && enabled;
@@ -88,7 +82,7 @@ export function setupMotion({ button, onShake, onTilt, onStop }) {
     }
     button.hidden = !eligible();
     button.disabled = requesting;
-    button.textContent = enabled ? 'Motion on' : 'Enable motion';
+    button.title = enabled ? 'Disable motion' : 'Enable motion';
     button.setAttribute('aria-pressed', String(enabled));
     button.setAttribute('aria-label', enabled ? 'Disable device motion' : 'Enable device motion');
   }

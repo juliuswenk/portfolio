@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=keyboard-focus-1">
+  <link rel="stylesheet" href="style.css?v=acceleration-1">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
-  <script type="module" src="app.js?v=keyboard-focus-1"></script>
+  <script type="module" src="app.js?v=acceleration-1"></script>
 </head>
 <body data-view="home" data-collection="idle">
   <header class="site-header">
@@ -24,7 +24,12 @@
       <h1 class="sr-only">Julius Wenk — selected work</h1>
       <canvas id="viewer" aria-hidden="true" hidden></canvas>
       <div class="collection" aria-label="Projects"></div>
-      <button id="motion-toggle" type="button" aria-pressed="false" hidden>Enable motion</button>
+      <button id="motion-toggle" type="button" aria-label="Enable device motion" title="Enable motion" aria-pressed="false" hidden>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <rect x="15" y="5" width="18" height="38" rx="4.5"/>
+          <path d="M22 9h4M21 39h6M8 12c-5 4 5 6 0 10s5 6 0 10 0 4 0 4M40 12c5 4-5 6 0 10s-5 6 0 10 0 4 0 4"/>
+        </svg>
+      </button>
       <div class="loading-screen" hidden><p role="status">LOADING PROJECTS</p></div>
       <p class="fallback-status" role="status" hidden>3D view unavailable. You can still open each project.</p>
     </section>
