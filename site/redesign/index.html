@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Interactive installations, digital experiences, and physical objects by Julius Wenk, New Media Designer.">
+  <title>Julius Wenk — Portfolio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='black'/%3E%3Ctext x='6' y='42' fill='white' font-family='sans-serif' font-weight='700' font-size='32'%3EJW%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+  <script type="module" src="app.js"></script>
+</head>
+<body data-view="home" data-collection="idle">
+  <header class="site-header">
+    <a class="wordmark" href="#/" aria-label="Julius Wenk — Home"><span aria-hidden="true">J<span class="name-tail first-name">ULIUS</span><span class="name-space"> </span>W<span class="name-tail last-name">ENK</span></span></a>
+    <a class="about-link" href="#/about">ABOUT<br>&amp; CONTACT</a>
+  </header>
+  <main>
+    <section id="home" aria-label="Selected projects">
+      <h1 class="sr-only">Julius Wenk — selected work</h1>
+      <canvas id="viewer" aria-hidden="true" hidden></canvas>
+      <div class="collection" aria-label="Projects"></div>
+      <div class="loading-screen" hidden><p role="status">LOADING PROJECTS</p></div>
+      <p class="fallback-status" role="status" hidden>3D view unavailable. You can still open each project.</p>
+    </section>
+    <div id="project" class="reading-view" hidden></div>
+    <article id="about" class="reading-view about-page" aria-labelledby="about-title" hidden>
+      <section class="glass">
+        <h1 id="about-title" tabindex="-1">Hi! I’m Julius</h1>
+        <p>My background in communication strategy shapes how I approach design: what does an experience communicate, how does it frame a subject, and what does it invite people to do?</p>
+        <p>I explore these questions through interactive installations, digital experiences, and physical objects. Technological systems often become stand-ins for the social, political, and economic structures surrounding us. I’m interested in the choices and interests built into them—who gets to act, who depends on whom, and what remains hidden.</p>
+        <p>Making lets me turn these questions into something people can encounter and experiment with. It’s also something I enjoy in its own right: working with materials, shaping behaviour, and discovering how an idea changes when it becomes a working object or experience.</p>
+      </section>
+      <section class="glass" aria-labelledby="cv-title">
+        <h2 id="cv-title">Education &amp; experience</h2>
+        <div class="cv-group"><h3>Design</h3><ol class="cv-list">
+          <li><div><strong>B.A. Kommunikationsdesign</strong><span>HTW Berlin</span></div><time>2024–heute</time></li>
+          <li><div><strong>Studentische Hilfskraft Entwicklung &amp; Projektbegleitung</strong><span>HTW Berlin &amp; Futurium Berlin</span></div><time>2026</time></li>
+          <li><div><strong>Tutor Vibe Coding</strong><span>HTW Berlin</span></div><time>2026</time></li>
+          <li><div><strong>Tutor Crashkurs TouchDesigner</strong><span>HTW Berlin</span></div><time>2025</time></li>
+        </ol></div>
+        <div class="cv-group"><h3>Writing</h3><ol class="cv-list">
+          <li><div><strong>B.A. Wirtschaftskommunikation</strong><span>HTW Berlin</span></div><time>2020–2023</time></li>
+          <li><div><strong>Werkstudent Social Media Management</strong><span>Sasserath Munzinger +</span></div><time>2022</time></li>
+          <li><div><strong>Praktikum Copywriting</strong><span>Serviceplan Berlin</span></div><time>2022–2023</time></li>
+          <li><div><strong>Traineeship Copywriting</strong><span>Serviceplan Berlin</span></div><time>2023–2024</time></li>
+        </ol></div>
+      </section>
+      <section class="glass" aria-labelledby="contact-title">
+        <h2 id="contact-title">Let’s talk.</h2>
+        <p>I’m looking to join a team creating interactive experiences, installations, or exhibitions.</p>
+        <p>If my approach fits your work, I’d like to talk.</p>
+        <nav class="contact-links" aria-label="Contact Julius">
+          <a href="mailto:wenk.julius@gmail.com">wenk.julius@gmail.com</a>
+          <a href="https://www.instagram.com/juliuswenk/">Instagram · @juliuswenk</a>
+          <a href="https://github.com/juliuswenk">GitHub · juliuswenk</a>
+        </nav>
+      </section>
+      <section class="glass asset-credits" aria-labelledby="asset-credits-title">
+        <h2 id="asset-credits-title">Asset credits</h2>
+        <p>Switch adapted from <a href="https://sketchfab.com/3d-models/cherry-mx-switches-71e8e1687abc4a8fbef195ab09581287">Cherry MX Switches by BlackCube</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Recolored, beveled, textured and rescaled.</p>
+        <p>LED diode adapted from <a href="https://sketchfab.com/3d-models/led-light-b962a42c45cc428b8c03cad469c3e42d">LED light by Jiří Kuba</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Recolored and rescaled.</p>
+        <p><a href="https://sketchfab.com/3d-models/oculus-quest-vr-headset-0d6c1d6aa3f747a5b35f8105ed585418">Quest headset by BlackCube</a>; <a href="https://sketchfab.com/3d-models/arduino-uno-low-poly-43cebeb50dc14ab490b553f0a0077eb9">Arduino UNO by Spark Games</a> (CC BY; modified materials and normalized scale). DOXA installation sketch: Julius Wenk.</p>
+        <p>Rendering uses <a href="https://threejs.org/">Three.js</a> (MIT). Physics uses <a href="https://rapier.rs/">Rapier</a> (<a href="vendor/RAPIER-LICENSE">Apache 2.0</a>).</p>
+      </section>
+      <section class="glass" aria-labelledby="impressum-title" lang="de">
+        <h2 id="impressum-title">Impressum</h2>
+        <address>Julius Wenk<br>Klarastraße 3<br>12459 Berlin<br><a href="mailto:wenk.julius@gmail.com">wenk.julius@gmail.com</a></address>
+      </section>
+    </article>
+  </main>
+  <noscript><style>.collection{display:none}#home{height:auto}body{overflow:auto}.no-script{padding:140px 24px;max-width:680px;margin:auto}.no-script a{display:block;margin:20px 0}</style><div class="no-script"><p>JavaScript is needed for this interactive prototype. The existing portfolio has the same project content.</p><a href="../index.html">Open the portfolio</a></div></noscript>
+</body>
+</html>

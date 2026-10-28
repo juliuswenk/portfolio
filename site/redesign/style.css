@@ -1,0 +1,31 @@
+@import url('../wireframe/style.css');
+
+/* Keep navigation and focus outlines above WebGL after WebKit resizes. */
+.site-header, .collection, .loading-screen, .fallback-status { transform: translateZ(0); }
+#viewer { position: fixed; inset: 0; width: 100%; height: 100svh; touch-action: none; }
+.collection { z-index: 2; grid-template-rows: repeat(2, minmax(0, 1fr)); bottom: max(66px, env(safe-area-inset-bottom)); }
+.project-object:nth-child(1) { grid-area: 1 / 1 / 2 / 3; }
+.project-object:nth-child(2) { grid-area: 1 / 3 / 2 / 5; }
+.project-object:nth-child(3) { grid-area: 1 / 5 / 2 / 7; }
+.project-object:nth-child(4) { grid-area: 2 / 2 / 3 / 4; }
+.project-object:nth-child(5) { grid-area: 2 / 4 / 3 / 6; }
+body[data-collection="loading"] .collection { visibility: hidden; }
+body[data-collection="loading"] #viewer { visibility: hidden; }
+body[data-collection="ready"] .collection { display: block; pointer-events: none; }
+body[data-collection="ready"] .project-object { position: absolute; margin: 0; opacity: 0; pointer-events: none; aspect-ratio: auto; }
+body[data-collection="ready"] .project-object img { visibility: hidden; }
+body[data-collection="ready"] .project-object:focus-visible { opacity: 1; outline: 2px solid #fff; outline-offset: 7px; border-radius: 8px; }
+.loading-screen { position: fixed; inset: 100px var(--edge) 50px; z-index: 3; display: grid; place-items: center; background: #000; }
+.loading-screen p { font-size: 14px; font-weight: 400; letter-spacing: .08em; }
+.fallback-status { position: fixed; left: var(--edge); right: var(--edge); bottom: max(18px, env(safe-area-inset-bottom)); margin: 0; text-align: center; color: #aaa; font-size: 12px; line-height: 1.5; }
+.asset-credits p { font-size: 14px; }
+address { font-style: normal; font-size: 16px; line-height: 1.8; }
+@media (max-aspect-ratio: 4/5) {
+  .collection { grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .project-object:nth-child(n) { grid-area: auto; }
+  .project-object:last-child { grid-column: 1 / -1; }
+}
+@media (max-height: 500px) {
+  .collection { bottom: 46px; }
+  .fallback-status { bottom: 8px; font-size: 11px; }
+}

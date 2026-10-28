@@ -16,6 +16,8 @@ The website presents seven projects as a spatial network connected through share
 
 ## Website experience
 
+The separate [redesign preview](https://juliuswenk.github.io/portfolio/redesign/) combines the minimal wireframe with the five-project physics collection. Its source and checks are in `site/redesign/`; the existing portfolio remains the main site.
+
 The opening network links the projects through their shared disciplines. Selecting a project brings its main image into the reading layout, while the network remains visible as context. Scrolling between projects moves through the network to the next work.
 
 At widths of 1000px and above, case studies place media on the left and text on the right. Below 1000px, a large portrait greets visitors above the introduction, and the network gives way to an ordinary scrolling page: About, then project heroes, summaries, stories, and supporting media. Each project introduces its intention, Julius’s contribution, and its outcome, with further technical detail available in expandable sections where relevant. Images can be enlarged for closer inspection.
