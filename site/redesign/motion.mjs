@@ -61,7 +61,7 @@ export function createTiltTracker() {
     // The tangent plane gives upright and flat holding positions the same automatic zero.
     const difference = current.map((value, index) => value - origin[index]);
     const x = dot(difference, right), y = dot(difference, up), rotation = angle - originAngle;
-    const target = { x: x * Math.cos(rotation) + y * Math.sin(rotation), y: -x * Math.sin(rotation) + y * Math.cos(rotation) };
+    const target = { x: -(x * Math.cos(rotation) + y * Math.sin(rotation)), y: -x * Math.sin(rotation) + y * Math.cos(rotation) };
     const alpha = 1 - Math.exp(-Math.max(0, Math.min(100, now - previous)) / 80);
     previous = now;
     filtered.x += alpha * (target.x - filtered.x);

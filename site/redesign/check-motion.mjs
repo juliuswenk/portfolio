@@ -37,7 +37,7 @@ for (const gravity of [[0, 0, 9.8], [0, 9.8, 0], [3, 8, 4], [9.8, 0, 0]]) {
   assert.deepEqual(tracker.sample(gravity, 200), { x: 0, y: 0 }, 'Every comfortable holding angle remains neutral');
 }
 const upright = createTiltTracker(); upright.sample([0, 9.8, 0], 0);
-assert.ok(upright.sample([-1.7, 9.65, 0], 200).x > 0, 'Leaning right slides right even from an upright starting position');
+assert.ok(upright.sample([-1.7, 9.65, 0], 200).x < 0, 'Horizontal tilt uses the corrected direction from an upright starting position');
 const forward = createTiltTracker(); forward.sample([0, 9.8, 0], 0);
 assert.ok(forward.sample([0, 9.65, -1.7], 200).y < 0);
 const backward = createTiltTracker(); backward.sample([0, 9.8, 0], 0);
@@ -140,14 +140,14 @@ const relative = harness(); relative.control.setActive(true); await relative.ena
 relative.orient([-3, 0, 9.33], 250);
 assert.equal(relative.tilts.length, 0, 'Tilt cannot disturb the collection before play starts');
 relative.send(20, 50);
-assert.ok(relative.tilts.at(-1).x > 0, 'Play uses continuous tilt relative to the original holding position');
+assert.ok(relative.tilts.at(-1).x < 0, 'Play uses continuous tilt relative to the original holding position');
 relative.advance(8000);
 assert.equal(relative.control.playing, false, 'Holding a tilt cannot extend the eight-second window');
 relative.send(0, 0); relative.send(0, 250); relative.send(20, 50);
-assert.ok(relative.tilts.at(-1).x > 0, 'Expiry does not redefine the initial zero');
+assert.ok(relative.tilts.at(-1).x < 0, 'Expiry does not redefine the initial zero');
 relative.control.setActive(false); relative.control.setActive(true);
 relative.send(0, 0); relative.send(0, 250); relative.send(20, 50);
-assert.ok(relative.tilts.at(-1).x > 0, 'Reading and returning preserve the initial zero');
+assert.ok(relative.tilts.at(-1).x < 0, 'Reading and returning preserve the initial zero');
 await relative.enable(); await relative.enable(); relative.send(0, 0); relative.send(0, 250); relative.send(20, 50);
 assert.ok(Math.abs(relative.tilts.at(-1).x) < 1e-6, 'Only a new enable action captures a new reference');
 

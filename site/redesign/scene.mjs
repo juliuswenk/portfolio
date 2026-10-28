@@ -8,11 +8,11 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
-import { createDrop } from './drop-physics.mjs?v=relative-tilt-1';
+import { createDrop } from './drop-physics.mjs?v=relative-tilt-2';
 import { applyCobaltScattering } from './cobalt-sss.mjs';
 import { projectAssets } from './project-assets.mjs';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
-import { setupMotion } from './motion.mjs?v=relative-tilt-1';
+import { setupMotion } from './motion.mjs?v=relative-tilt-2';
 
 export async function createCollection({ canvas, collection, signal, isHome, onOpen, onFailure }) {
   signal.throwIfAborted();
