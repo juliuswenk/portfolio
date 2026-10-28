@@ -8,8 +8,10 @@ Home loads the live collection once, with a **LOADING PROJECTS** screen and imme
 
 The physical world pauses and hides while reading. Returning preserves its positions and motion state. Resize reconstructs collision boundaries and hull scale from a snapshot, preserving rotations, normalized positions, velocities, sleep state and the settling timeline rather than replaying the drop. Reduced-motion visitors receive a settled collection. The original shaders, lighting, bloom, grain, FXAA and material settings are retained. GPU drawing stops once settled or hidden.
 
+On supported touch devices, **Enable motion** requests sensor permission from a tap. A deliberate back-and-forth shake starts an eight-second play window: shakes impart bounded impulses and tilt changes the sliding direction. Another deliberate shake restarts the full window. Expiry freezes the exact current positions and orientations. Reading, hiding the page, disabling motion or enabling reduced motion ends play; returning requires a fresh shake. Dragging remains independent. Missing/denied sensors do not affect browsing. Gravity filtering and screen-angle correction support portrait and landscape handling without a second orientation permission. Initial shake thresholds require real-phone calibration; no sensor data is transmitted or retained beyond the current filter samples.
+
 Asset credits and the existing Impressum are included at the end of About & Contact. Rapier 0.19.3 and its Apache 2.0 licence are copied from the test. Five self-contained GLBs total approximately 4 MB. Three.js remains pinned to the test's CDN version, 0.180.0.
 
-Checks: `node site/redesign/check.mjs`. Regression checks for the preserved wireframe: `node site/wireframe/check.mjs`; original portfolio: `node check.cjs`.
+Checks: `node site/redesign/check.mjs` and `node site/redesign/check-motion.mjs`. Regression checks for the preserved wireframe: `node site/wireframe/check.mjs`; original portfolio: `node check.cjs`.
 
-Exploded models/transitions and motion sensors are deferred. Final model silhouettes and real-device rendering still need evaluation.
+Exploded models/transitions are deferred. Final model silhouettes, motion sensitivity and real-device rendering still need evaluation. Sensor API reference: [Device Orientation and Motion](https://www.w3.org/TR/orientation-event/).

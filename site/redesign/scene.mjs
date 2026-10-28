@@ -12,6 +12,7 @@ import { createDrop } from './drop-physics.mjs';
 import { applyCobaltScattering } from './cobalt-sss.mjs';
 import { projectAssets } from './project-assets.mjs';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
+import { setupMotion } from './motion.mjs';
 
 export async function createCollection({ canvas, collection, signal, isHome, onOpen, onFailure }) {
   signal.throwIfAborted();
@@ -49,7 +50,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
 
   let models = [], simulation, layout, layoutKey, footprints, hullPoints, baseScales, localCorners;
   let active = false, disposed = false, pointer, frameId, previous = performance.now(), accumulator = 0, needsRender = true;
-  let resizing = false, resizePending = false;
+  let resizing = false, resizePending = false, motion;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const links = projectAssets.map(asset => collection.querySelector(`[href="#/projects/${asset.slug}"]`));
   const events = new AbortController();
@@ -57,6 +58,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
     if (disposed) return;
     disposed = true;
     cancelAnimationFrame(frameId);
+    motion?.dispose();
     events.abort();
     signal.removeEventListener('abort', dispose);
     observer.disconnect();
@@ -178,19 +180,35 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
     listen(document, 'visibilitychange', () => { cancelPointer(); previous = performance.now(); accumulator = 0; });
     listen(canvas, 'webglcontextlost', event => { event.preventDefault(); onFailure(); });
     listen(reducedMotion, 'change', () => {
+      motion?.stop();
       if (reducedMotion.matches) settle();
       needsRender = true;
     });
     observer.observe(canvas);
     observer.observe(collection);
+    motion = setupMotion({
+      button: document.querySelector('#motion-toggle'),
+      onShake(impulse) {
+        if (!active || resizing || pointer) return false;
+        needsRender = true;
+        return simulation.shake(impulse);
+      },
+      onTilt: tilt => { if (!resizing && !pointer) simulation.tilt(tilt); },
+      onStop() {
+        cancelPointer(); simulation.endMotion();
+        accumulator = 0; needsRender = true;
+      }
+    });
     function setActive(value) {
       active = value;
+      motion.setActive(value);
       if (!active) cancelPointer();
       else resizePending = true;
       previous = performance.now(); accumulator = 0; needsRender = true;
     }
     function frame(now) {
       if (disposed) return;
+      motion.tick(now);
       const delta = Math.min((now - previous) / 1000, .05); previous = now;
       if (active && isHome() && !document.hidden && !resizing) {
         if (resizePending && !pointer) { resizePending = false; resize().catch(onFailure); }
@@ -249,6 +267,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
       const next = await createDrop(clouds, poses, nextLayout.halfWidth, nextLayout.halfHeight, Math.random, snapshot);
       if (disposed) { next.dispose(); return; }
       simulation?.dispose(); simulation = next; layout = nextLayout; layoutKey = key;
+      if (snapshot?.playing && !motion?.playing) simulation.endMotion();
       if (reducedMotion.matches) settle();
       models.forEach((model, index) => model.scale.copy(baseScales[index]).multiplyScalar(layout.scale));
       renderer.setSize(width, height, false); composer.setSize(width, height);

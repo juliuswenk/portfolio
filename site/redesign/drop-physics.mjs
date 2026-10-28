@@ -4,9 +4,9 @@ const ready = RAPIER.init();
 export async function createDrop(pointClouds, poses, width, height, random = Math.random, snapshot) {
   await ready;
   if (pointClouds.length !== poses.length || pointClouds.some(points => points.length < 12 || points.length % 3 || !points.every(Number.isFinite))) throw new Error('Every asset needs a valid collision point cloud.');
-  const world = new RAPIER.World({ x: 0, y: 0, z: 14 });
+  const world = new RAPIER.World(snapshot?.gravity || { x: 0, y: 0, z: 14 });
   world.timestep = 1 / 120;
-  world.createCollider(RAPIER.ColliderDesc.cuboid(width + 1, height + 1, 0.1).setTranslation(0, 0, 0.1).setRestitution(0.28).setFriction(0.8));
+  const floor = world.createCollider(RAPIER.ColliderDesc.cuboid(width + 1, height + 1, 0.1).setTranslation(0, 0, 0.1).setRestitution(0.28).setFriction(0.8));
   world.createCollider(RAPIER.ColliderDesc.cuboid(width + 1, height + 1, 0.1).setTranslation(0, 0, -10));
   for (const sign of [-1, 1]) {
     world.createCollider(RAPIER.ColliderDesc.cuboid(0.1, height + 1, 5).setTranslation(sign * (width + 0.1), 0, -5));
@@ -19,12 +19,50 @@ export async function createDrop(pointClouds, poses, width, height, random = Mat
       .setRotation(pose.rotation).setLinearDamping(0.8).setAngularDamping(2).setCcdEnabled(true));
     const hull = RAPIER.ColliderDesc.convexHull(points);
     if (!hull) throw new Error('Could not create an asset collision hull.');
-    world.createCollider(hull.setRestitution(0.28).setFriction(0.8), body);
+    const collider = world.createCollider(hull.setRestitution(0.28).setFriction(0.8), body);
     body.setLinvel({ x: (random() - 0.5) * 0.6, y: (random() - 0.5) * 0.6, z: 0 }, true);
     body.setAngvel({ x: (random() - 0.5) * 1.2, y: (random() - 0.5) * 1.2, z: (random() - 0.5) * 0.8 }, true);
-    return { body, points, target: pose.rotation, corrected: false };
+    return { body, collider, points, target: pose.rotation, corrected: false };
   });
   let elapsed = snapshot?.elapsed ?? 0, held = null, settleFrom = snapshot?.settleFrom ?? 1.6, settleEnd = snapshot?.settleEnd ?? 2.6;
+  let playing = snapshot?.playing || false;
+  function playFriction(value) {
+    floor.setFriction(value);
+    entries.forEach(({ collider }) => collider.setFriction(value));
+  }
+  if (playing) playFriction(.2);
+  function shake({ x, y }) {
+    if (held || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    playing = true; playFriction(.2);
+    const length = Math.max(1, Math.hypot(x, y) / 3);
+    entries.forEach((entry, index) => {
+      const { body } = entry;
+      entry.corrected = false;
+      body.setEnabledRotations(true, true, true, true);
+      body.applyImpulse({ x: x / length * body.mass(), y: y / length * body.mass(), z: -.8 * body.mass() }, true);
+      body.setAngvel({ x: Math.sin(index + 1) * 2, y: Math.cos(index + 1) * 2, z: (index % 2 ? -1 : 1) * .8 }, true);
+    });
+    return true;
+  }
+  function tilt({ x, y }) {
+    if (!playing || !Number.isFinite(x) || !Number.isFinite(y)) return;
+    const force = value => Math.abs(value) < .8 ? 0 : Math.max(-12, Math.min(12, value * 1.6));
+    world.gravity = { x: force(x), y: force(y), z: 14 };
+    if (world.gravity.x || world.gravity.y) entries.forEach(({ body }) => body.wakeUp());
+  }
+  function endMotion() {
+    if (!playing) return;
+    endDrag(false);
+    playing = false; playFriction(.8);
+    world.gravity = { x: 0, y: 0, z: 14 };
+    entries.forEach(entry => {
+      entry.body.setLinvel({ x: 0, y: 0, z: 0 }, false);
+      entry.body.setAngvel({ x: 0, y: 0, z: 0 }, false);
+      entry.body.setEnabledRotations(false, false, false, false);
+      entry.corrected = true;
+      entry.body.sleep();
+    });
+  }
   function restartPhysics() {
     settleFrom = elapsed + 1.3;settleEnd = elapsed + 2.6;
     for (const entry of entries) {
@@ -103,7 +141,7 @@ export async function createDrop(pointClouds, poses, width, height, random = Mat
   function step() {
     elapsed += world.timestep;
     // The plan permits a settling correction: ease into a readable tilted front face.
-    if (!held && elapsed > settleFrom) for (const entry of entries) {
+    if (!playing && !held && elapsed > settleFrom) for (const entry of entries) {
       if (entry.corrected) continue;
       const { body, points, target } = entry;
       const current = body.rotation();
@@ -135,14 +173,18 @@ export async function createDrop(pointClouds, poses, width, height, random = Mat
       held.velocity.y = held.velocity.y * .65 + (target.y - current.y) * t / world.timestep * .35;
       held.entry.body.setNextKinematicTranslation({ x: current.x + (target.x - current.x) * t, y: current.y + (target.y - current.y) * t, z: current.z + (target.z - current.z) * t });
     }
+    if (playing) entries.forEach(({ body }) => {
+      const velocity = body.linvel(), speed = Math.hypot(velocity.x, velocity.y, velocity.z);
+      if (speed > 6) body.setLinvel({ x: velocity.x * 6 / speed, y: velocity.y * 6 / speed, z: velocity.z * 6 / speed }, true);
+    });
     world.step();
   }
   const takeSnapshot = () => ({
-    width, height, elapsed, settleFrom, settleEnd,
+    width, height, elapsed, settleFrom, settleEnd, playing, gravity: { ...world.gravity },
     entries: entries.map(({ body, target, corrected }) => ({
       position: { ...body.translation() }, rotation: { ...body.rotation() }, target: { x: target.x, y: target.y, z: target.z, w: target.w },
       velocity: { ...body.linvel() }, angularVelocity: { ...body.angvel() }, corrected, sleeping: body.isSleeping()
     }))
   });
-  return { world, entries, step, tap, beginDrag, moveDrag, endDrag, snapshot: takeSnapshot, dispose: () => world.free() };
+  return { world, entries, step, tap, beginDrag, moveDrag, endDrag, shake, tilt, endMotion, snapshot: takeSnapshot, dispose: () => world.free() };
 }
