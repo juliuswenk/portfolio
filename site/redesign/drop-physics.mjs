@@ -4,7 +4,7 @@ const ready = RAPIER.init();
 export async function createDrop(pointClouds, poses, width, height, random = Math.random, snapshot) {
   await ready;
   if (pointClouds.length !== poses.length || pointClouds.some(points => points.length < 12 || points.length % 3 || !points.every(Number.isFinite))) throw new Error('Every asset needs a valid collision point cloud.');
-  const world = new RAPIER.World({ x: 0, y: 0, z: 14 });
+  const world = new RAPIER.World(snapshot?.gravity || { x: 0, y: 0, z: 14 });
   world.timestep = 1 / 120;
   const floor = world.createCollider(RAPIER.ColliderDesc.cuboid(width + 1, height + 1, 0.1).setTranslation(0, 0, 0.1).setRestitution(0.28).setFriction(0.8));
   world.createCollider(RAPIER.ColliderDesc.cuboid(width + 1, height + 1, 0.1).setTranslation(0, 0, -10));
@@ -30,10 +30,10 @@ export async function createDrop(pointClouds, poses, width, height, random = Mat
     floor.setFriction(value);
     entries.forEach(({ collider }) => collider.setFriction(value));
   }
-  if (playing) playFriction(.2);
+  if (playing) playFriction(.12);
   function shake({ x, y }) {
     if (held || !Number.isFinite(x) || !Number.isFinite(y)) return false;
-    playing = true; playFriction(.2);
+    playing = true; playFriction(.12);
     const length = Math.max(1, Math.hypot(x, y) * .16 / 3);
     entries.forEach(entry => {
       const { body } = entry;
@@ -43,10 +43,17 @@ export async function createDrop(pointClouds, poses, width, height, random = Mat
     });
     return true;
   }
+  function tilt({ x, y }) {
+    if (!playing || held || !Number.isFinite(x) || !Number.isFinite(y)) return;
+    const force = value => Math.abs(value) <= .052 ? 0 : Math.max(-8, Math.min(8, value * 20));
+    world.gravity = { x: force(x), y: force(y), z: 14 };
+    if (world.gravity.x || world.gravity.y) entries.forEach(({ body }) => body.wakeUp());
+  }
   function endMotion() {
     if (!playing) return;
     endDrag(false);
     playing = false; playFriction(.8);
+    world.gravity = { x: 0, y: 0, z: 14 };
     entries.forEach(entry => {
       entry.body.setLinvel({ x: 0, y: 0, z: 0 }, false);
       entry.body.setAngvel({ x: 0, y: 0, z: 0 }, false);
@@ -172,11 +179,11 @@ export async function createDrop(pointClouds, poses, width, height, random = Mat
     world.step();
   }
   const takeSnapshot = () => ({
-    width, height, elapsed, settleFrom, settleEnd, playing,
+    width, height, elapsed, settleFrom, settleEnd, playing, gravity: { ...world.gravity },
     entries: entries.map(({ body, target, corrected }) => ({
       position: { ...body.translation() }, rotation: { ...body.rotation() }, target: { x: target.x, y: target.y, z: target.z, w: target.w },
       velocity: { ...body.linvel() }, angularVelocity: { ...body.angvel() }, corrected, sleeping: body.isSleeping()
     }))
   });
-  return { world, entries, step, tap, beginDrag, moveDrag, endDrag, shake, endMotion, snapshot: takeSnapshot, dispose: () => world.free() };
+  return { world, entries, step, tap, beginDrag, moveDrag, endDrag, shake, tilt, endMotion, snapshot: takeSnapshot, dispose: () => world.free() };
 }

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
-import { createShakeDetector } from './motion.mjs';
+import { createShakeDetector, createTiltTracker } from './motion.mjs';
 import { createDrop } from './drop-physics.mjs';
 
 const reading = (x = 0, y = 0, z = 0, gravity = [0, 0, 9.8]) => ({ acceleration: { x, y, z }, accelerationIncludingGravity: { x: x + gravity[0], y: y + gravity[1], z: z + gravity[2] } });
@@ -31,11 +31,30 @@ for (const time of [0, 100, 200]) assert.equal(gravityOnly.sample({ acceleration
 assert.ok(gravityOnly.sample({ accelerationIncludingGravity: { x: 20, y: 0, z: 9.8 } }, 300).shake.x < 0);
 assert.ok(gravityOnly.sample({ accelerationIncludingGravity: { x: -20, y: 0, z: 9.8 } }, 420).shake.x > 0, 'Gravity-only sensors use a filtered acceleration signal');
 
+for (const gravity of [[0, 0, 9.8], [0, 9.8, 0], [3, 8, 4], [9.8, 0, 0]]) {
+  const tracker = createTiltTracker();
+  assert.deepEqual(tracker.sample(gravity, 0), { x: 0, y: 0 }, 'The first position is automatically zero');
+  assert.deepEqual(tracker.sample(gravity, 200), { x: 0, y: 0 }, 'Every comfortable holding angle remains neutral');
+}
+const upright = createTiltTracker(); upright.sample([0, 9.8, 0], 0);
+assert.ok(upright.sample([-1.7, 9.65, 0], 200).x > 0, 'Leaning right slides right even from an upright starting position');
+const forward = createTiltTracker(); forward.sample([0, 9.8, 0], 0);
+assert.ok(forward.sample([0, 9.65, -1.7], 200).y < 0);
+const backward = createTiltTracker(); backward.sample([0, 9.8, 0], 0);
+assert.ok(backward.sample([0, 9.65, 1.7], 200).y > 0, 'Forward and backward tilts are distinct near upright');
+const landscape = createTiltTracker(); landscape.sample([0, 0, 9.8], 0, 90);
+const landscapeTilt = landscape.sample([-1.7, 0, 9.65], 200, 90);
+assert.ok(Math.abs(landscapeTilt.x) < 1e-6 && landscapeTilt.y < 0, 'Relative tilt follows the screen orientation');
+assert.equal(landscape.sample([NaN, 0, 0], 300), null);
+assert.equal(landscape.sample([0, 0, 0], 300), null);
+upright.reset();
+assert.deepEqual(upright.sample([-1.7, 9.65, 0], 400), { x: 0, y: 0 }, 'Re-enabling can establish a different automatic zero');
+
 const source = fs.readFileSync(new URL('./motion.mjs', import.meta.url), 'utf8').replace(/^export /gm, '');
 function harness({ permission = 'granted', touch = true, secure = true, supports = true } = {}) {
   const target = () => ({ handlers: new Map(), addEventListener(type, handler) { this.handlers.set(type, handler); }, removeEventListener(type) { this.handlers.delete(type); }, emit(type, event) { return this.handlers.get(type)?.(event); } });
-  let now = 0, id = 0, permissionCalls = 0, stops = 0;
-  const timers = new Map(), shakes = [];
+  let now = 0, id = 0, permissionCalls = 0, stops = 0, gravity = [0, 0, 9.8];
+  const timers = new Map(), shakes = [], tilts = [];
   const button = { ...target(), hidden: true, innerHTML: '<svg></svg>', set textContent(value) { throw new Error('Do not replace the motion icon with text'); }, setAttribute(name, value) { this[name] = value; } };
   const reduced = { ...target(), matches: false };
   const device = permission === 'implicit' ? {} : { requestPermission() { permissionCalls++; if (permission === 'error') throw new Error('Blocked'); return Promise.resolve(permission); } };
@@ -45,7 +64,7 @@ function harness({ permission = 'granted', touch = true, secure = true, supports
     matchMedia: query => query.includes('reduced-motion') ? reduced : { matches: touch },
     performance: { now: () => now },
     setTimeout(fn, delay) { timers.set(++id, { at: now + delay, fn }); return id; }, clearTimeout(key) { timers.delete(key); },
-    config: { button, onShake(value) { shakes.push(value); return true; }, onStop() { stops++; } }
+    config: { button, onShake(value) { shakes.push(value); return true; }, onTilt(value) { tilts.push(value); }, onStop() { stops++; } }
   };
   vm.createContext(browser); vm.runInContext(source, browser);
   const control = vm.runInContext('setupMotion(config)', browser);
@@ -53,9 +72,10 @@ function harness({ permission = 'granted', touch = true, secure = true, supports
     now += ms;
     for (const [key, timer] of [...timers]) if (timer.at <= now) { timers.delete(key); timer.fn(); }
   }
-  const send = (x, delta = 20) => { advance(delta); browser.window.emit('devicemotion', reading(x)); };
+  const send = (x, delta = 20) => { advance(delta); browser.window.emit('devicemotion', reading(x, 0, 0, gravity)); };
+  const orient = (value, delta = 20) => { gravity = value; send(0, delta); };
   const start = () => { send(0, 0); send(0, 250); send(20, 50); send(-20, 120); };
-  return { control, button, browser, reduced, shakes, advance, send, start, enable: () => button.emit('click'), calls: () => permissionCalls, stops: () => stops };
+  return { control, button, browser, reduced, shakes, tilts, advance, send, orient, start, enable: () => button.emit('click'), calls: () => permissionCalls, stops: () => stops };
 }
 const mobile = harness();
 mobile.control.setActive(true);
@@ -116,27 +136,49 @@ assert.equal(hidden.control.playing, false);
 assert.ok(!hidden.browser.window.handlers.has('devicemotion'));
 hidden.control.dispose(); assert.ok(!hidden.button.handlers.has('click'));
 
+const relative = harness(); relative.control.setActive(true); await relative.enable(); relative.send(0, 0);
+relative.orient([-3, 0, 9.33], 250);
+assert.equal(relative.tilts.length, 0, 'Tilt cannot disturb the collection before play starts');
+relative.send(20, 50);
+assert.ok(relative.tilts.at(-1).x > 0, 'Play uses continuous tilt relative to the original holding position');
+relative.advance(8000);
+assert.equal(relative.control.playing, false, 'Holding a tilt cannot extend the eight-second window');
+relative.send(0, 0); relative.send(0, 250); relative.send(20, 50);
+assert.ok(relative.tilts.at(-1).x > 0, 'Expiry does not redefine the initial zero');
+relative.control.setActive(false); relative.control.setActive(true);
+relative.send(0, 0); relative.send(0, 250); relative.send(20, 50);
+assert.ok(relative.tilts.at(-1).x > 0, 'Reading and returning preserve the initial zero');
+await relative.enable(); await relative.enable(); relative.send(0, 0); relative.send(0, 250); relative.send(20, 50);
+assert.ok(Math.abs(relative.tilts.at(-1).x) < 1e-6, 'Only a new enable action captures a new reference');
+
 const points = new Float32Array([-1,-1,-.2, 1,-1,-.2, -1,1,-.2, 1,1,-.2, -1,-1,.2, 1,-1,.2, -1,1,.2, 1,1,.2]);
 const poses = [-2, 2].map(x => ({ x, y: 0, rotation: { x: 0, y: 0, z: 0, w: 1 } }));
 let physics = await createDrop([points, points], poses, 6, 5, () => .5);
 for (let i = 0; i < 1440; i++) physics.step();
+physics.tilt({ x: .3, y: .2 });
+assert.deepEqual({ ...physics.world.gravity }, { x: 0, y: 0, z: 14 }, 'Tilt remains inactive outside play');
 assert.equal(physics.shake({ x: NaN, y: 0 }), false);
 const restingDepth = physics.entries.map(({ body }) => body.linvel().z);
 assert.equal(physics.shake({ x: 30, y: -20 }), true);
-assert.deepEqual({ ...physics.world.gravity }, { x: 0, y: 0, z: 14 }, 'Motion never changes gravity');
+assert.deepEqual({ ...physics.world.gravity }, { x: 0, y: 0, z: 14 }, 'A shake does not introduce a tilt bias');
 physics.entries.forEach(({ body }, index) => {
   assert.ok(body.linvel().x > 0 && body.linvel().y < 0);
   assert.equal(body.linvel().z, restingDepth[index], 'Acceleration adds no artificial lift away from the glass');
 });
+physics.tilt({ x: .02, y: -.02 });
+assert.deepEqual({ ...physics.world.gravity }, { x: 0, y: 0, z: 14 }, 'Tiny variations around neutral do not cause drift');
+physics.tilt({ x: .2, y: -.15 });
+assert.ok(physics.world.gravity.x > 0 && physics.world.gravity.y < 0 && physics.world.gravity.z === 14, 'Tilt applies continuous sliding force while contact with the glass stays fixed');
 for (let i = 0; i < 40; i++) physics.step();
 assert.ok(physics.snapshot().playing && physics.entries.every(entry => !entry.corrected));
 const snapshot = { ...physics.snapshot(), scaleRatio: 1 };
 const resized = await createDrop([points, points], poses, 6, 5, () => .5, snapshot);
 physics.dispose(); physics = resized;
-assert.ok(physics.snapshot().playing, 'Resize preserves active acceleration play');
-assert.deepEqual({ ...physics.world.gravity }, { x: 0, y: 0, z: 14 });
+assert.ok(physics.snapshot().playing, 'Resize preserves active play');
+assert.ok(physics.world.gravity.x > 0 && physics.world.gravity.y < 0 && physics.world.gravity.z === 14);
 const pose = () => physics.entries.map(({ body }) => ({ position: { ...body.translation() }, rotation: { ...body.rotation() } }));
 const before = pose(); physics.endMotion();
+assert.deepEqual({ ...physics.world.gravity }, { x: 0, y: 0, z: 14 });
 assert.deepEqual(pose(), before, 'Stopping does not reassemble or move objects');
 assert.ok(physics.entries.every(({ body }) => body.isSleeping() && Math.hypot(...Object.values(body.linvel())) === 0));
 for (let i = 0; i < 1440; i++) physics.step();
@@ -146,4 +188,4 @@ physics.endMotion(); physics.beginDrag(0); physics.moveDrag(0, 0);
 for (let i = 0; i < 20; i++) physics.step();
 assert.ok(physics.entries[0].body.translation().x > before[0].position.x, 'Dragging still works after motion expires');
 physics.endDrag(false); physics.dispose();
-console.log('Motion checks passed: directional acceleration, no tilt/lift, filtering, screen rotation, icon preservation, permissions, eight-second restart/freeze, reading/background/reduced-motion stops, resize and independent dragging.');
+console.log('Motion checks passed: automatic zero at arbitrary holding angles, smooth relative tilt, no neutral drift or artificial lift, reference preserved across play/reading, permissions, eight-second freeze/restart, resize and independent dragging.');
