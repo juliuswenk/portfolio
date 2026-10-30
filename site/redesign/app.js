@@ -1,7 +1,7 @@
 import '../projects.js';
 import '../media.js';
 import { escapeHTML, routeFromHash, renderProject } from '../wireframe/content.mjs';
-import { projectAssets } from './project-assets.mjs';
+import { projectAssets, switchParts } from './project-assets.mjs?v=switch-parts-1';
 
 const projects = projectAssets.map(asset => window.PORTFOLIO_PROJECTS.find(project => project.slug === asset.slug));
 const home = document.querySelector('#home');
@@ -28,6 +28,7 @@ function showFallback() {
   collection.inert = false;
   collection.querySelectorAll('a').forEach(link => link.removeAttribute('style'));
   document.body.dataset.collection = loadState;
+  delete document.body.dataset.parts;
   failure.hidden = false;
 }
 function loadCollection() {
@@ -37,7 +38,7 @@ function loadCollection() {
   loading.hidden = false;
   collection.inert = true;
   loadTimer = setTimeout(showFallback, 15000);
-  import('./scene.mjs?v=relative-tilt-2').then(module => module.createCollection({
+  import('./scene.mjs?v=switch-glitter-1').then(module => module.createCollection({
     canvas, collection, signal: loadAbort.signal,
     isHome: () => document.body.dataset.view === 'home',
     onOpen: slug => navigate(`#/projects/${slug}`),
@@ -52,6 +53,7 @@ function loadCollection() {
     loading.hidden = true;
     collection.inert = false;
     scene.setActive(document.body.dataset.view === 'home');
+    scene.setProject(projectView.dataset.project === 'carry-the-computation' ? projectView.querySelectorAll('.part-stage') : null, true);
   }).catch(error => {
     if (!loadAbort.signal.aborted) console.warn('3D collection unavailable; keeping project placeholders.', error);
     showFallback();
@@ -65,9 +67,15 @@ const scrollPositions = new Map();
 function showRoute(restore = false, focus = true) {
   const next = routeFromHash(location.hash, projects);
   scene?.setActive(false);
+  // Capture part positions before replacing the reading DOM or restoring scroll.
+  if (projectView.dataset.project === 'carry-the-computation') scene?.setProject(null, next.name !== 'home');
   if (next.name === 'project' && projectView.dataset.project !== next.project.slug) {
     projectView.innerHTML = renderProject(next.project, window.PORTFOLIO_MEDIA);
     projectView.dataset.project = next.project.slug;
+    if (next.project.slug === 'carry-the-computation') projectView.querySelectorAll('.part-stage').forEach((stage, index) => {
+      stage.setAttribute('role', 'img');
+      stage.setAttribute('aria-label', switchParts[index].label);
+    });
   } else if (next.name !== 'project') {
     projectView.replaceChildren();
     delete projectView.dataset.project;
@@ -80,7 +88,11 @@ function showRoute(restore = false, focus = true) {
   wordmark.setAttribute('aria-label', next.name === 'home' ? 'Julius Wenk — Home' : 'JW — Back to projects');
   document.title = next.name === 'project' ? `${next.project.title} — Julius Wenk` : next.name === 'about' ? 'About & Contact — Julius Wenk' : 'Julius Wenk — Portfolio';
   window.scrollTo({ top: restore ? scrollPositions.get(entry) || 0 : 0, behavior: 'instant' });
-  if (next.name === 'home') { loadCollection(); scene?.setActive(true); }
+  if (next.name === 'home') { loadCollection(); scene?.setActive(true); scene?.setProject(null); }
+  else if (next.name === 'project' && next.project.slug === 'carry-the-computation') {
+    loadCollection();
+    scene?.setProject(projectView.querySelectorAll('.part-stage'));
+  } else scene?.setProject(null, true);
   if (!focus) return;
   if (next.name === 'home') (returnTarget && !collection.inert ? returnTarget : aboutLink).focus({ preventScroll: true });
   else {

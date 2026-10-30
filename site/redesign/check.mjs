@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
-import { projectAssets } from './project-assets.mjs';
+import { projectAssets, switchParts } from './project-assets.mjs';
 import { createDrop } from './drop-physics.mjs';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
 import { escapeHTML, routeFromHash, renderProject } from '../wireframe/content.mjs';
@@ -21,6 +21,27 @@ assert.ok(!/id="(?:pause|replay|project-index|project-close)"/.test(page));
 const clouds = projectAssets.map(asset => {
   const b = fs.readFileSync(new URL(`./assets/${asset.file}.glb`, import.meta.url));
   const length = b.readUInt32LE(12), gltf = JSON.parse(b.toString('utf8', 20, 20 + length)), points = [];
+  if (asset.file === 'switch') {
+    const nodes = switchParts.flatMap(part => part.nodes);
+    assert.equal(switchParts.length, projects[0].caseStudy.length + 1, 'Every Carry placeholder has a meaningful part');
+    assert.equal(new Set(nodes).size, nodes.length, 'Each switch mesh is used once');
+    assert.deepEqual([...nodes].sort(), gltf.nodes.filter(node => node.mesh !== undefined).map(node => node.name).sort(), 'All eight meshes, including both contact caps, are accounted for');
+  }
+  assert.ok(b.length < 2_000_000, `${asset.file} stays under 2 MB`);
+  for (const cobalt of gltf.materials.filter(material => ['cobalt_blue_polymer', 'led_cobalt_resin', 'frosted_cobalt_acrylic'].includes(material.name))) {
+    if (cobalt.name !== 'cobalt_blue_polymer') assert.ok(cobalt.extensions.KHR_materials_transmission.transmissionTexture, 'Translucent glitter preserves transmission between opaque flakes');
+    for (const texture of [cobalt.pbrMetallicRoughness.baseColorTexture, cobalt.pbrMetallicRoughness.metallicRoughnessTexture, cobalt.normalTexture]) {
+      assert.ok(texture, 'Cobalt glitter exports color, reflective flakes and facet normals');
+      const image = gltf.images[gltf.textures[texture.index].source], view = gltf.bufferViews[image.bufferView];
+      assert.equal(image.mimeType, 'image/png');
+      const start = 28 + length + (view.byteOffset || 0);
+      assert.equal(b.readUInt32BE(start + 16), 512);
+      assert.equal(b.readUInt32BE(start + 20), 512);
+      for (const mesh of gltf.meshes) for (const primitive of mesh.primitives) {
+        if (gltf.materials[primitive.material] === cobalt) assert.ok(primitive.attributes[`TEXCOORD_${texture.texCoord || 0}`] !== undefined, 'Glitter maps use an exported UV set');
+      }
+    }
+  }
   for (const mesh of gltf.meshes) for (const primitive of mesh.primitives) {
     const a = gltf.accessors[primitive.attributes.POSITION], v = gltf.bufferViews[a.bufferView];
     for (let i = 0; i < a.count; i++) for (let k = 0; k < 3; k++) points.push(b.readFloatLE(28 + length + (v.byteOffset || 0) + (a.byteOffset || 0) + i * (v.byteStride || 12) + k * 4) * asset.scale);
@@ -88,12 +109,12 @@ function harness(hash = '') {
   const modulePromise = new Promise((resolve, reject) => { resolveModule = resolve; rejectModule = reject; });
   const element = () => ({ dataset: {}, hidden: false, style: {}, focus() {}, setAttribute() {}, removeAttribute() {}, querySelector: () => element(), querySelectorAll: () => [], replaceChildren() { this.innerHTML = ''; } });
   for (const selector of ['#home', '#project', '#about', '.wordmark', '.about-link', '.collection', '#viewer', '.loading-screen', '.fallback-status']) views.set(selector, element());
-  const controller = { activations: [], disposed: false, setActive(value) { this.activations.push(value); }, dispose() { this.disposed = true; } };
+  const controller = { activations: [], parts: [], disposed: false, setActive(value) { this.activations.push(value); }, setProject(stages, immediate) { this.parts.push({ stages, immediate }); }, dispose() { this.disposed = true; } };
   const browser = {
     window: { ...copy.window, addEventListener: (name, handler) => listeners[name] = handler },
     document: { body: { dataset: {} }, querySelector: selector => views.get(selector), addEventListener: (name, handler) => listeners[name] = handler },
     crypto: { randomUUID: () => String(++counter) }, AbortController, console: { warn() {} },
-    location: { hash }, scrollY: 0, escapeHTML, routeFromHash, renderProject, projectAssets,
+    location: { hash }, scrollY: 0, escapeHTML, routeFromHash, renderProject, projectAssets, switchParts,
     setTimeout(fn, delay) { timers.set(++counter, { fn, delay }); return counter; }, clearTimeout(id) { timers.delete(id); },
     testModule() { imports++; return modulePromise; },
     history: { state: {}, replaceState(state) { this.state = state; }, pushState(state, _, nextHash) { this.state = state; browser.location.hash = nextHash; } }
@@ -122,6 +143,14 @@ assert.equal(direct.controller.activations.at(-1), true);
 assert.equal(direct.imports(), 1, 'Returning reuses the collection');
 direct.go('#/projects/matrix-lamp');
 assert.equal(direct.controller.activations.at(-1), false);
+const carry = harness('#/projects/carry-the-computation');
+assert.equal(carry.browser.document.body.dataset.view, 'project', 'Direct Carry links display copy immediately');
+assert.equal(carry.imports(), 1, 'Direct Carry links also load their real parts');
+carry.ready(); await flush();
+assert.equal(carry.controller.parts.at(-1).immediate, true, 'Direct entry does not animate from an unseen home');
+carry.go('#/');
+assert.equal(carry.controller.parts.at(-1).stages, null, 'Returning reassembles the same switch');
+assert.equal(carry.controller.activations.at(-1), true);
 const timeout = harness();
 [...timeout.timers.values()][0].fn();
 assert.equal(timeout.browser.document.body.dataset.collection, 'fallback');

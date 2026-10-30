@@ -8,6 +8,10 @@
 #motion-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 #motion-toggle:disabled { cursor: default; }
 #viewer { position: fixed; inset: 0; width: 100%; height: 100svh; touch-action: none; }
+body:not([data-view="home"]) #viewer { pointer-events: none; }
+.reading-view { position: relative; }
+body[data-parts="ready"] #project .part-placeholder { visibility: hidden; }
+body[data-parts="ready"] #project { animation-duration: 650ms; }
 .collection { z-index: 2; grid-template-rows: repeat(2, minmax(0, 1fr)); bottom: max(66px, calc(env(safe-area-inset-bottom) + 60px)); }
 .project-object:nth-child(1) { grid-area: 1 / 1 / 2 / 3; }
 .project-object:nth-child(2) { grid-area: 1 / 3 / 2 / 5; }
