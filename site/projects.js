@@ -575,7 +575,7 @@ window.PORTFOLIO_PROJECTS = [
     "id": 7,
     "title": "Carry the Computation",
     "slug": "carry-the-computation",
-    "atAGlance": "What does responsibility feel like when a machine depends on your labour? Carry the Computation asks visitors to copy 32 bytes with switches, allowing their accuracy or deliberate errors to affect a language model’s answer. I developed the concept, physical controller, and interaction, directing AI-assisted software and firmware. Built in one week for an internal course presentation, its tactile task encouraged participation but sometimes drew attention away from the printed dialogue.",
+    "atAGlance": "Visitors use physical switches to copy data that affects a language model’s answers. A second model responds, and their conversation appears on a receipt printer. Copying accurately or introducing errors gives visitors a part in how the exchange develops. I built the installation in one week to explore responsibility when a machine depends on human labour.",
     "discipline": "Interactive installation",
     "skills": [
       "Interaction design",
@@ -588,7 +588,7 @@ window.PORTFOLIO_PROJECTS = [
       "src": "assets/carry-the-computation-setup.webp",
       "width": 1122,
       "height": 1402,
-      "title": "Controller wiring and receipt printer together",
+      "title": "Controller wiring beside the receipt printer",
       "credit": "",
       "use": "hero",
       "source": "Projekte/Carry the computation/exec-e2079ca6-dd1a-4cab-97e1-df8a335c112b.png"
@@ -598,7 +598,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/carry-the-computation-controller.webp",
         "width": 1122,
         "height": 1402,
-        "title": "Controller switches, LEDs, and exposed construction",
+        "title": "Mechanical switches and LEDs on the exposed controller",
         "credit": "",
         "use": "network",
         "source": "Projekte/Carry the computation/exec-615b3456-5408-41f0-b907-238e089e47f7.png"
@@ -607,7 +607,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/carry-the-computation-receipts.webp",
         "width": 1122,
         "height": 1402,
-        "title": "Printed conversation records and transfer accuracy",
+        "title": "Printed dialogue with transfer accuracy",
         "credit": "",
         "use": "network",
         "source": "Projekte/Carry the computation/exec-21975189-1039-4e95-896e-45454aea740a.png"
@@ -618,7 +618,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/carry-the-computation-printer.webp",
         "width": 1122,
         "height": 1402,
-        "title": "Thermal printer with the interaction instructions",
+        "title": "Thermal printer with interaction instructions",
         "credit": "",
         "use": "detail",
         "source": "Projekte/Carry the computation/exec-b2942067-4603-4095-aef2-85723391717f.png"
@@ -636,23 +636,23 @@ window.PORTFOLIO_PROJECTS = [
     "caseStudy": [
       {
         "title": "Experience & intention",
-        "text": "Eight switches copy an illuminated binary pattern; a ninth confirms each byte. After 32 transfers, the machine produces an answer affected by the visitor’s copying. A separate language model acts as its user, reacting and asking another question. Their exchange unfolds on a receipt printer.\n\nDeveloped for Martín Nadal’s course *Agents in Debate: Autonomy, AI, and Artistic Creation*, the installation explores responsibility, dependence, and our readiness to perceive intention or emotion in generated language."
+        "text": "Eight switches let visitors copy an illuminated binary pattern. A ninth confirms each byte. After 32 transfers, the machine generates an answer influenced by their inputs. A separate language model acts as its user and asks the next question.\n\nThe task gives visitors a choice: follow the pattern or interfere with it. I wanted to explore how that choice affects their sense of responsibility for the conversation, and how readily they read intention or emotion into the models’ responses.\n\nThe project was developed for Martín Nadal’s course *Agents in Debate: Autonomy, AI, and Artistic Creation* and tested at its internal presentation."
       },
       {
         "title": "My role & collaborators",
-        "text": "I developed the concept, directed the interaction and physical design, selected components, assembled and soldered the controller, evaluated experiments, and tested the installation.\n\nCodex assisted with software, firmware, wiring documentation, and debugging. I directed and evaluated this work against the artistic intention. Martín Nadal led the course; presentation participants contributed informal feedback."
+        "text": "I developed the concept and designed the interaction and physical controller. I assembled and soldered the hardware using components I selected, then tested the installation through a series of experiments.\n\nI used Codex to assist with the software and firmware, as well as wiring documentation and debugging. I directed that work and evaluated whether the results served the project’s intention. Martín Nadal led the course. Participants at the presentation contributed informal feedback."
       },
       {
         "title": "Outcome & learning",
-        "text": "Participants enjoyed physically operating the machine. Some deliberately introduced errors; casual participants generally aimed for accuracy. The simulated user’s human-like reactions surprised visitors. These are informal observations and feedback, not a structured study.\n\nThe controller sometimes became a game to beat: visitors prioritised speed and accuracy, reading the dialogue afterward. I learned that real interference, noticeable effects, and meaningful consequences are separate challenges—and that a satisfying interface can compete with its purpose. Further work would emphasise the printed dialogue and make input consequences more legible."
+        "text": "The switches and copying task drew people in. Some visitors deliberately introduced errors, while others aimed for accuracy. The simulated user’s human-like reactions also surprised participants. These observations came from the internal presentation and informal feedback.\n\nThe controller sometimes became a game to beat. Visitors focused on speed and accuracy, then read the printed dialogue afterward. The interaction encouraged participation but could draw attention away from the conversation it affected.\n\nMaking an input alter the computation did not guarantee that visitors would notice or understand its effect. Further development would give the printed dialogue more prominence and make the relationship between copying errors and the model’s answers easier to follow."
       },
       {
         "title": "Key design decisions",
-        "text": "I moved from corrupting model weights to transferring intermediate data so the visitor’s labour became part of the machine’s operation. Experiments produced either little visible change or abrupt breakdown; I calibrated token-selection interventions and numerical noise to explore consequences between those extremes.\n\nA separate simulated user gives the altered answer a recipient. Its reactions and follow-up questions extend the consequence beyond a single broken text. These emotional reactions are generated behaviour, not felt experience."
+        "text": "I initially considered corrupting the model’s weights. I moved to transferring intermediate data so that visitors would carry out a task within the machine’s operation.\n\nIn experiments, interference often made little visible difference or caused the output to break down abruptly. I adjusted how the transferred values affected token selection and calibrated additional numerical noise to explore the range between those outcomes.\n\nAdding a simulated user gave the altered answers a recipient. Its responses and follow-up questions let the effects continue through a conversation. The emotions expressed in that exchange are generated behaviour, not felt experience."
       },
       {
         "title": "Implementation details",
-        "text": "The installation combines a custom controller, a laptop running two local language models, and an Epson TM-m30 thermal receipt printer.\n\nThe controller uses an Arduino Nano ESP32, nine mechanical switches, seventeen red LEDs, and three SN74HC595 shift registers on perfboard. Two LED rows show the target byte and the visitor’s selected bits. USB serial communication connects it to a Python application with a browser interface for testing, dialogue history, and receipt previews.\n\n**Qwen2.5-0.5B-Instruct**, running through **PyTorch and Hugging Face Transformers**, generates the machine’s answers. Visitors transfer eight quantized candidate-strength values at each of four generation steps. These 32 bytes influence token selection and subsequent generation; copying errors also control calibrated numerical noise.\n\nThe simulated user runs separately through **Ollama using Qwen3:8B**, receiving the actual conversation without byte interference. Its emotional reactions are generated behaviour, not felt experience. Saved progress allows another visitor to continue an unfinished transfer.",
+        "text": "A custom controller connects to a laptop running two local language models. An Epson TM-m30 thermal receipt printer records their conversation.\n\nThe controller uses an Arduino Nano ESP32 with nine mechanical switches and seventeen red LEDs. Three SN74HC595 shift registers are mounted on perfboard. Two LED rows display the target byte and the visitor’s selected bits. A USB serial connection links the controller to a Python application. Its browser interface provides testing controls alongside dialogue history and receipt previews.\n\n**Qwen2.5-0.5B-Instruct**, running through **PyTorch and Hugging Face Transformers**, generates the machine’s answers. At each of four generation steps, visitors transfer eight quantized values representing the strengths of candidate tokens. These 32 bytes affect token selection and subsequent generation. Copying errors also control calibrated numerical noise.\n\nThe simulated user runs separately through **Ollama using Qwen3:8B**. It receives the conversation without byte interference. Progress is saved so another visitor can continue an unfinished transfer.",
         "expandable": true
       }
     ],
