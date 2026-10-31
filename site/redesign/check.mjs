@@ -140,9 +140,9 @@ assert.equal(oldDoxa.browser.location.hash, '#/projects/doxa', 'Old project addr
 assert.equal(new URL(oldDoxa.browser.location.href).pathname, '/portfolio/', 'The base element does not move navigation into /redesign/');
 assert.equal(harness('#contact').browser.location.hash, '#/about', 'Old contact links reach About & Contact');
 assert.equal(harness('#project-4').browser.location.redirect, 'https://juliuswenk.github.io/portfolio/legacy.html#project-4', 'Omitted projects remain available on the previous site');
-const direct = harness('#/projects/veiled-panopticon');
+const direct = harness('#/about');
 assert.equal(direct.imports(), 0, 'Direct content does not wait for 3D');
-assert.equal(direct.browser.document.body.dataset.view, 'project');
+assert.equal(direct.browser.document.body.dataset.view, 'about');
 direct.key('Tab');
 assert.equal(direct.browser.document.body.dataset.input, 'keyboard');
 direct.point();

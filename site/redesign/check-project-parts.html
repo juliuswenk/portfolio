@@ -7,14 +7,14 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { createProjectParts } from './project-parts.mjs';
-import { projectAssets, projectParts } from './project-assets.mjs?v=project-parts-1';
+import { createProjectParts } from './project-parts.mjs?v=arduino-parts-1';
+import { projectAssets, projectParts } from './project-assets.mjs?v=arduino-parts-1';
 const status = document.querySelector('[role="status"]');
 function assert(condition, message) { if (!condition) throw new Error(message); }
 try {
   for (const asset of projectAssets.filter(asset => projectParts[asset.slug])) {
     const config = projectParts[asset.slug];
-    const { scene: model } = await new GLTFLoader().loadAsync(`./assets/${asset.file}.glb?v=cobalt-glitter-1`);
+    const { scene: model } = await new GLTFLoader().loadAsync(`./assets/${asset.file}.glb?v=section-models-2`);
     model.scale.setScalar(1.3);
     model.position.set(2, -1, .5);
     model.rotation.set(1.2, .2, -.15);
@@ -47,6 +47,8 @@ try {
       model.updateMatrixWorld(true);
       groups.forEach((group, index) => {
         const p = group.getWorldPosition(new THREE.Vector3()).project(camera), rect = stages[index].getBoundingClientRect();
+        const expected = new THREE.Quaternion().setFromEuler(new THREE.Euler(...(config.parts[index].rotation || config.rotation)));
+        assert(Math.abs(group.getWorldQuaternion(new THREE.Quaternion()).dot(expected)) > .999999, 'Each component uses its intended inspection angle');
         assert(Math.abs((p.x + 1) * innerWidth / 2 - rect.left - rect.width / 2) < .001, 'Part stays horizontally aligned');
         assert(Math.abs((1 - p.y) * innerHeight / 2 - rect.top - rect.height / 2) < .001, 'Part stays with its scrolling section');
       });
@@ -70,7 +72,7 @@ try {
     view.setProject(null, true); assembled();
     assert(!view.visible, 'Reduced motion returns immediately');
   }
-  status.textContent = 'Passed for Switch, DOXA, VISIO and Matrix Lamp: complete grouping, original meshes/materials, repeated LEDs, section alignment, scrolling, idle rendering, detached DOM, exact reassembly and reduced motion.';
+  status.textContent = 'Passed for Switch, DOXA, VISIO, Matrix Lamp and Veiled Panopticon: complete grouping, original meshes/materials, repeated LEDs, section alignment, scrolling, idle rendering, detached DOM, exact reassembly and reduced motion.';
 } catch (error) {
   status.textContent = `FAILED: ${error.message}`;
   throw error;

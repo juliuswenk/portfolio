@@ -35,7 +35,7 @@ export function createProjectParts(model, camera, config) {
     if (config.repeat) repeatedPart = part;
     return part;
   });
-  const inspection = new THREE.Quaternion().setFromEuler(new THREE.Euler(...config.rotation));
+  const inspections = config.parts.map(part => new THREE.Quaternion().setFromEuler(new THREE.Euler(...(part.rotation || config.rotation))));
   const position = new THREE.Vector3(), scale = new THREE.Vector3(), quaternion = new THREE.Quaternion();
   let stages = [], progress = 0, opening = false, dirty = true;
   function restore() {
@@ -75,7 +75,7 @@ export function createProjectParts(model, camera, config) {
           camera.position.y + (innerHeight / 2 - rect.top - rect.height / 2) * units, 0);
         model.worldToLocal(position);
         group.position.lerpVectors(home, position, eased);
-        quaternion.copy(inverse).multiply(inspection);
+        quaternion.copy(inverse).multiply(inspections[index]);
         group.quaternion.identity().slerp(quaternion, eased);
         const pixels = Math.min(240, rect.width * .65, rect.height * .7);
         const partScale = pixels * units / Math.max(size.x, size.y, size.z);

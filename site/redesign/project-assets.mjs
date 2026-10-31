@@ -43,5 +43,16 @@ export const projectParts = {
   'matrix-lamp': {
     rotation: [0, 0, -.35], repeat: true,
     parts: Array.from({ length: 7 }, () => ({ label: 'LED diode', nodes: ['Cylinder_0 - Web', 'Cylinder_1 - Web'] }))
+  },
+  'veiled-panopticon': {
+    rotation: [Math.PI / 2 - .35, -.2, -.08],
+    parts: [
+      { label: 'Circuit board and indicator', nodes: ['Arduino - Circuit board and indicator'] },
+      { label: 'USB connector', nodes: ['Arduino - USB connector'], rotation: [.18, Math.PI / 2 - .35, -.1] },
+      { label: 'Pin headers', nodes: ['Arduino - Pin headers'] },
+      { label: 'Power input and capacitors', nodes: ['Arduino - Power input and capacitors'], rotation: [.18, Math.PI / 2 - .35, -.1] },
+      { label: 'Microcontroller and socket', nodes: ['Arduino - Microcontroller and socket'] },
+      { label: 'Clock, reset and support electronics', nodes: ['Arduino - Clock, reset and support electronics'] }
+    ]
   }
 };
