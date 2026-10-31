@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
-import { projectAssets, switchParts } from './project-assets.mjs';
+import { projectAssets, projectParts } from './project-assets.mjs';
 import { createDrop } from './drop-physics.mjs';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
 import { escapeHTML, routeFromHash, renderProject } from '../wireframe/content.mjs';
@@ -13,7 +13,9 @@ assert.equal(projects.length, 5);
 assert.equal(new Set(projects.map(project => project.slug)).size, 5);
 for (const slug of ['improving-futurium', 'hyperreal']) assert.equal(routeFromHash(`#/projects/${slug}`, projects).name, 'home');
 for (const project of projects) assert.ok(renderProject(project, copy.window.PORTFOLIO_MEDIA).includes(escapeHTML(project.title)));
-const page = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+const page = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+assert.ok(page.includes('<base href="./redesign/">'), 'The main page resolves shared scripts, models and media from the redesign directory');
+assert.ok(fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8').includes("location.search + location.hash"), 'Old redesign links preserve their query and project hash when redirecting');
 assert.ok(page.includes('Asset credits') && page.includes('Impressum') && page.includes('Klarastraße 3'));
 assert.ok(page.indexOf('<h3>Design') < page.indexOf('<h3>Writing'));
 assert.ok(!/id="(?:pause|replay|project-index|project-close)"/.test(page));
@@ -21,11 +23,20 @@ assert.ok(!/id="(?:pause|replay|project-index|project-close)"/.test(page));
 const clouds = projectAssets.map(asset => {
   const b = fs.readFileSync(new URL(`./assets/${asset.file}.glb`, import.meta.url));
   const length = b.readUInt32LE(12), gltf = JSON.parse(b.toString('utf8', 20, 20 + length)), points = [];
-  if (asset.file === 'switch') {
-    const nodes = switchParts.flatMap(part => part.nodes);
-    assert.equal(switchParts.length, projects[0].caseStudy.length + 1, 'Every Carry placeholder has a meaningful part');
-    assert.equal(new Set(nodes).size, nodes.length, 'Each switch mesh is used once');
-    assert.deepEqual([...nodes].sort(), gltf.nodes.filter(node => node.mesh !== undefined).map(node => node.name).sort(), 'All eight meshes, including both contact caps, are accounted for');
+  const config = projectParts[asset.slug];
+  if (config) {
+    const project = projects.find(project => project.slug === asset.slug);
+    assert.equal(config.parts.length, project.caseStudy.length + 1, `${asset.name}: one part per placeholder`);
+    const sections = config.repeat ? config.parts.slice(0, 1) : config.parts;
+    const inventory = gltf.nodes.filter(node => node.mesh !== undefined).flatMap(node => gltf.meshes[node.mesh].primitives.map((_, index) => `${node.name}:${index}`));
+    const selected = sections.flatMap(part => part.primitives
+      ? part.primitives.map(index => `${gltf.nodes.find(node => node.mesh !== undefined).name}:${index}`)
+      : part.nodes.flatMap(name => {
+          const node = gltf.nodes.find(node => node.name === name);
+          assert.ok(node, `Existing node: ${name}`);
+          return gltf.meshes[node.mesh].primitives.map((_, index) => `${name}:${index}`);
+        }));
+    assert.deepEqual(selected.sort(), inventory.sort(), `${asset.name}: every exported primitive belongs to exactly one group`);
   }
   assert.ok(b.length < 2_000_000, `${asset.file} stays under 2 MB`);
   for (const cobalt of gltf.materials.filter(material => ['cobalt_blue_polymer', 'led_cobalt_resin', 'frosted_cobalt_acrylic'].includes(material.name))) {
@@ -109,22 +120,27 @@ function harness(hash = '') {
   const modulePromise = new Promise((resolve, reject) => { resolveModule = resolve; rejectModule = reject; });
   const element = () => ({ dataset: {}, hidden: false, style: {}, focus() {}, setAttribute() {}, removeAttribute() {}, querySelector: () => element(), querySelectorAll: () => [], replaceChildren() { this.innerHTML = ''; } });
   for (const selector of ['#home', '#project', '#about', '.wordmark', '.about-link', '.collection', '#viewer', '.loading-screen', '.fallback-status']) views.set(selector, element());
-  const controller = { activations: [], parts: [], disposed: false, setActive(value) { this.activations.push(value); }, setProject(stages, immediate) { this.parts.push({ stages, immediate }); }, dispose() { this.disposed = true; } };
+  const controller = { activations: [], parts: [], disposed: false, setActive(value) { this.activations.push(value); }, setProject(slug, stages, immediate) { this.parts.push({ slug, stages, immediate }); }, dispose() { this.disposed = true; } };
   const browser = {
     window: { ...copy.window, addEventListener: (name, handler) => listeners[name] = handler },
-    document: { body: { dataset: {} }, querySelector: selector => views.get(selector), addEventListener: (name, handler) => listeners[name] = handler },
+    document: { baseURI: 'https://juliuswenk.github.io/portfolio/redesign/', body: { dataset: {} }, querySelector: selector => views.get(selector), addEventListener: (name, handler) => listeners[name] = handler },
     crypto: { randomUUID: () => String(++counter) }, AbortController, console: { warn() {} },
-    location: { hash }, scrollY: 0, escapeHTML, routeFromHash, renderProject, projectAssets, switchParts,
+    location: { hash, href: `https://juliuswenk.github.io/portfolio/${hash}`, replace(url) { this.redirect = String(url); } }, URL, scrollY: 0, escapeHTML, routeFromHash, renderProject, projectAssets, projectParts,
     setTimeout(fn, delay) { timers.set(++counter, { fn, delay }); return counter; }, clearTimeout(id) { timers.delete(id); },
     testModule() { imports++; return modulePromise; },
-    history: { state: {}, replaceState(state) { this.state = state; }, pushState(state, _, nextHash) { this.state = state; browser.location.hash = nextHash; } }
+    history: { state: {}, replaceState(state, _, nextURL) { this.state = state; if (nextURL) { browser.location.href = String(nextURL); browser.location.hash = new URL(nextURL).hash; } }, pushState(state, _, nextURL) { this.replaceState(state, _, nextURL); } }
   };
   browser.window.scrollTo = ({ top }) => browser.scrollY = top;
   vm.createContext(browser); vm.runInContext(app, browser);
   return { browser, views, timers, controller, imports: () => imports, go: nextHash => vm.runInContext(`navigate(${JSON.stringify(nextHash)})`, browser), ready: () => resolveModule({ createCollection: async () => controller }), fail: () => rejectModule(new Error('Network unavailable')), key: key => listeners.keydown({ key, preventDefault() {} }), point: () => listeners.pointerdown() };
 }
 const flush = () => new Promise(resolve => setImmediate(resolve));
-const direct = harness('#/projects/doxa');
+const oldDoxa = harness('#project-1');
+assert.equal(oldDoxa.browser.location.hash, '#/projects/doxa', 'Old project addresses open the new project page');
+assert.equal(new URL(oldDoxa.browser.location.href).pathname, '/portfolio/', 'The base element does not move navigation into /redesign/');
+assert.equal(harness('#contact').browser.location.hash, '#/about', 'Old contact links reach About & Contact');
+assert.equal(harness('#project-4').browser.location.redirect, 'https://juliuswenk.github.io/portfolio/legacy.html#project-4', 'Omitted projects remain available on the previous site');
+const direct = harness('#/projects/veiled-panopticon');
 assert.equal(direct.imports(), 0, 'Direct content does not wait for 3D');
 assert.equal(direct.browser.document.body.dataset.view, 'project');
 direct.key('Tab');
@@ -143,14 +159,21 @@ assert.equal(direct.controller.activations.at(-1), true);
 assert.equal(direct.imports(), 1, 'Returning reuses the collection');
 direct.go('#/projects/matrix-lamp');
 assert.equal(direct.controller.activations.at(-1), false);
-const carry = harness('#/projects/carry-the-computation');
-assert.equal(carry.browser.document.body.dataset.view, 'project', 'Direct Carry links display copy immediately');
-assert.equal(carry.imports(), 1, 'Direct Carry links also load their real parts');
-carry.ready(); await flush();
-assert.equal(carry.controller.parts.at(-1).immediate, true, 'Direct entry does not animate from an unseen home');
-carry.go('#/');
-assert.equal(carry.controller.parts.at(-1).stages, null, 'Returning reassembles the same switch');
-assert.equal(carry.controller.activations.at(-1), true);
+for (const slug of Object.keys(projectParts)) {
+  const reading = harness(`#/projects/${slug}`);
+  assert.equal(reading.browser.document.body.dataset.view, 'project', `${slug}: direct copy displays immediately`);
+  assert.equal(reading.imports(), 1, `${slug}: direct links also load their real parts`);
+  reading.ready(); await flush();
+  assert.equal(reading.controller.parts.at(-1).immediate, true, 'Direct entry does not animate from an unseen home');
+  assert.equal(reading.controller.parts.at(-1).slug, slug, 'Reading uses the selected model');
+  reading.go('#/');
+  assert.equal(reading.controller.parts.at(-1).slug, null, 'Returning reassembles the selected model');
+  assert.equal(reading.controller.activations.at(-1), true);
+  reading.go('#/projects/doxa');
+  reading.go('#/projects/visio-technologica');
+  assert.equal(reading.controller.parts.at(-1).slug, 'visio-technologica', 'Project switching selects the new parts');
+  assert.equal(reading.imports(), 1, 'Project switching reuses the loaded collection');
+}
 const timeout = harness();
 [...timeout.timers.values()][0].fn();
 assert.equal(timeout.browser.document.body.dataset.collection, 'fallback');

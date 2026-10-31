@@ -10,10 +10,10 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { createDrop } from './drop-physics.mjs?v=relative-tilt-2';
 import { applyCobaltScattering } from './cobalt-sss.mjs';
-import { projectAssets } from './project-assets.mjs?v=switch-parts-1';
+import { projectAssets, projectParts } from './project-assets.mjs?v=project-parts-1';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
 import { setupMotion } from './motion.mjs?v=relative-tilt-2';
-import { createSwitchParts } from './switch-parts.mjs';
+import { createProjectParts } from './project-parts.mjs';
 
 export async function createCollection({ canvas, collection, signal, isHome, onOpen, onFailure }) {
   signal.throwIfAborted();
@@ -51,7 +51,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
 
   let models = [], simulation, layout, layoutKey, footprints, hullPoints, baseScales, localCorners;
   let active = false, disposed = false, pointer, frameId, previous = performance.now(), accumulator = 0, needsRender = true;
-  let resizing = false, resizePending = false, motion, switchView;
+  let resizing = false, resizePending = false, motion, readingView, partViews;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const links = projectAssets.map(asset => collection.querySelector(`[href="#/projects/${asset.slug}"]`));
   const events = new AbortController();
@@ -75,7 +75,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
     for (const pass of composer.passes) pass.dispose?.();
     composer.dispose(); environment.dispose(); light.shadow.dispose(); renderer.dispose();
   }
-  const observer = new ResizeObserver(() => { resizePending = true; switchView?.invalidate(); });
+  const observer = new ResizeObserver(() => { resizePending = true; readingView?.invalidate(); });
   signal.addEventListener('abort', dispose, { once: true });
 
   try {
@@ -109,7 +109,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
       return model;
     });
     baseScales = models.map(model => model.scale.clone());
-    switchView = createSwitchParts(models[0], camera);
+    partViews = models.map((model, index) => projectParts[projectAssets[index].slug] ? createProjectParts(model, camera, projectParts[projectAssets[index].slug]) : null);
     footprints = hullPoints.map((points, index) => assetFootprint(points, projectAssets[index].rotation));
     localCorners = hullPoints.map(points => {
       const box = new THREE.Box3().setFromArray(points), corners = [];
@@ -144,9 +144,9 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
       needsRender = true;
     }
     function listen(target, type, handler) { target.addEventListener(type, handler, { signal: events.signal }); }
-    listen(window, 'scroll', () => switchView.invalidate());
+    listen(window, 'scroll', () => readingView?.invalidate());
     listen(canvas, 'pointerdown', event => {
-      if (!active || switchView.visible || resizing || !event.isPrimary || event.button !== 0 || pointer) return;
+      if (!active || readingView?.visible || resizing || !event.isPrimary || event.button !== 0 || pointer) return;
       const index = pick(event);
       if (index < 0) return;
       const p = simulation.entries[index].body.translation();
@@ -158,7 +158,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
       event.preventDefault();
     });
     listen(canvas, 'pointermove', event => {
-      if (!active || switchView.visible || resizing) return;
+      if (!active || readingView?.visible || resizing) return;
       if (pointer) {
         if (pointer.id !== event.pointerId) return;
         if (!pointer.dragging && Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) > 6) {
@@ -210,23 +210,28 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
       else resizePending = true;
       previous = performance.now(); accumulator = 0; needsRender = true;
     }
-    function setProject(stages, immediate = false) {
-      switchView.setProject(stages, immediate || reducedMotion.matches);
-      models.forEach((model, index) => { model.visible = index === 0 || !stages; });
-      canvas.hidden = !isHome() && !switchView.visible;
-      document.body.dataset.parts = stages ? 'ready' : '';
+    function setProject(slug, stages, immediate = false) {
+      const index = projectAssets.findIndex(asset => asset.slug === slug);
+      if (slug) {
+        if (readingView && readingView !== partViews[index]) readingView.setProject(null, true);
+        readingView = partViews[index];
+      }
+      readingView?.setProject(slug ? stages : null, immediate || reducedMotion.matches);
+      models.forEach((model, modelIndex) => { model.visible = modelIndex === index || !slug; });
+      canvas.hidden = !isHome() && !readingView?.visible;
+      document.body.dataset.parts = slug && readingView ? 'ready' : '';
       needsRender = true;
     }
     function frame(now) {
       if (disposed) return;
       motion.tick(now);
       const delta = Math.min((now - previous) / 1000, .05); previous = now;
-      if (switchView.visible && !document.hidden && !resizing) {
+      if (readingView?.visible && !document.hidden && !resizing) {
         if (renderer.domElement.width !== Math.floor(innerWidth * renderer.getPixelRatio()) || renderer.domElement.height !== Math.floor(innerHeight * renderer.getPixelRatio())) {
           sizeViewport(innerWidth, innerHeight);
-          switchView.invalidate();
+          readingView?.invalidate();
         }
-        if (switchView.update(delta, reducedMotion.matches) || needsRender) {
+        if (readingView.update(delta, reducedMotion.matches) || needsRender) {
           composer.render(delta); needsRender = false;
         }
       } else if (active && isHome() && !document.hidden && !resizing) {

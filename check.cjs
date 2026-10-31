@@ -65,7 +65,7 @@ assert.equal((published.match(/<h3>At a glance<\/h3>/g)||[]).length,7,'Exactly o
 assert.equal((published.match(/<details>/g)||[]).length,5,'Only the longer technical stories have disclosures');
 assert.ok(!/<details[^>]* open/.test(published),'Implementation details start closed');
 assert.equal((published.match(/<summary>Implementation details<\/summary>/g)||[]).length,5);
-const page=fs.readFileSync('site/index.html','utf8');
+const page=fs.readFileSync('site/legacy.html','utf8');
 for(const href of ['mailto:wenk.julius@gmail.com','https://www.instagram.com/juliuswenk/','https://github.com/juliuswenk'])assert.equal(page.split(`href="${href}"`).length-1,href.startsWith('mailto:')?3:2,'Contact links appear in About and the ending, with email also in Impressum');
 assert.equal(data[4].title,'Hyperreal Ravelord');
 assert.match(published,/BEASTBOY/);
@@ -194,7 +194,7 @@ assert.ok(page.includes('id="project-menu"')&&page.includes('id="project-names"'
 assert.ok(page.includes('id="network-stage"')&&page.includes('Connected through shared skills'));
 assert.ok(!/rel="canonical"|property="og:image"/.test(page),'No fabricated public URL is published before hosting is chosen');
 const missingPage=fs.readFileSync('site/404.html','utf8');
-assert.ok(missingPage.includes('href="/portfolio/#overview"')&&!missingPage.includes('<script'),'404 navigation works independently from a nested missing path');
+assert.ok(missingPage.includes('href="/portfolio/"')&&!missingPage.includes('<script'),'404 navigation works independently from a nested missing path');
 const preview=fs.readFileSync('site/assets/social-preview.jpg');
 assert.ok(preview.length>10000&&preview.length<300000,'The social image is prepared as a lightweight real asset');
 assert.ok(fs.statSync('site/assets/hyperreal-spin-web.webm').size<9000000);
@@ -374,7 +374,7 @@ assert.equal(compactGltf.animations.length,1);
 for(const name of ['HeadTop_End','LeftHandIndex4','RightHandIndex4','LeftLeg','RightLeg','Spine2'])assert.ok(compactGltf.nodes.some(node=>node.name.endsWith(name)),'The portrait framing needs wave, chest, and knee landmarks');
 assert.ok(compactHead>=0&&compactGltf.skins.some(skin=>skin.joints.includes(compactHead)));
 assert.ok(fs.statSync('site/assets/avatar-still.webp').size<30000);
-assert.ok(!fs.readFileSync('site/index.html','utf8').includes('src="about-model.js'),'The renderer is not an opening module');
+assert.ok(!fs.readFileSync('site/legacy.html','utf8').includes('src="about-model.js'),'The renderer is not an opening module');
 assert.ok(!query('#supporting-images').innerHTML.match(/<iframe src=/),'Hidden preview players have no source');
 assert.ok(!query('#chapters').innerHTML.match(/<img src=/),'Reading sources wait for approach');
 assert.ok(query('#nodes').innerHTML.includes('preload="none"'));

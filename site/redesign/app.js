@@ -1,7 +1,7 @@
 import '../projects.js';
 import '../media.js';
 import { escapeHTML, routeFromHash, renderProject } from '../wireframe/content.mjs';
-import { projectAssets, switchParts } from './project-assets.mjs?v=switch-parts-1';
+import { projectAssets, projectParts } from './project-assets.mjs?v=project-parts-1';
 
 const projects = projectAssets.map(asset => window.PORTFOLIO_PROJECTS.find(project => project.slug === asset.slug));
 const home = document.querySelector('#home');
@@ -38,7 +38,7 @@ function loadCollection() {
   loading.hidden = false;
   collection.inert = true;
   loadTimer = setTimeout(showFallback, 15000);
-  import('./scene.mjs?v=switch-glitter-1').then(module => module.createCollection({
+  import('./scene.mjs?v=project-parts-1').then(module => module.createCollection({
     canvas, collection, signal: loadAbort.signal,
     isHome: () => document.body.dataset.view === 'home',
     onOpen: slug => navigate(`#/projects/${slug}`),
@@ -53,7 +53,7 @@ function loadCollection() {
     loading.hidden = true;
     collection.inert = false;
     scene.setActive(document.body.dataset.view === 'home');
-    scene.setProject(projectView.dataset.project === 'carry-the-computation' ? projectView.querySelectorAll('.part-stage') : null, true);
+    scene.setProject(projectParts[projectView.dataset.project] ? projectView.dataset.project : null, projectView.querySelectorAll('.part-stage'), true);
   }).catch(error => {
     if (!loadAbort.signal.aborted) console.warn('3D collection unavailable; keeping project placeholders.', error);
     showFallback();
@@ -68,13 +68,13 @@ function showRoute(restore = false, focus = true) {
   const next = routeFromHash(location.hash, projects);
   scene?.setActive(false);
   // Capture part positions before replacing the reading DOM or restoring scroll.
-  if (projectView.dataset.project === 'carry-the-computation') scene?.setProject(null, next.name !== 'home');
+  if (projectParts[projectView.dataset.project]) scene?.setProject(null, null, next.name !== 'home');
   if (next.name === 'project' && projectView.dataset.project !== next.project.slug) {
     projectView.innerHTML = renderProject(next.project, window.PORTFOLIO_MEDIA);
     projectView.dataset.project = next.project.slug;
-    if (next.project.slug === 'carry-the-computation') projectView.querySelectorAll('.part-stage').forEach((stage, index) => {
+    if (projectParts[next.project.slug]) projectView.querySelectorAll('.part-stage').forEach((stage, index) => {
       stage.setAttribute('role', 'img');
-      stage.setAttribute('aria-label', switchParts[index].label);
+      stage.setAttribute('aria-label', projectParts[next.project.slug].parts[index].label);
     });
   } else if (next.name !== 'project') {
     projectView.replaceChildren();
@@ -89,10 +89,10 @@ function showRoute(restore = false, focus = true) {
   document.title = next.name === 'project' ? `${next.project.title} — Julius Wenk` : next.name === 'about' ? 'About & Contact — Julius Wenk' : 'Julius Wenk — Portfolio';
   window.scrollTo({ top: restore ? scrollPositions.get(entry) || 0 : 0, behavior: 'instant' });
   if (next.name === 'home') { loadCollection(); scene?.setActive(true); scene?.setProject(null); }
-  else if (next.name === 'project' && next.project.slug === 'carry-the-computation') {
+  else if (next.name === 'project' && projectParts[next.project.slug]) {
     loadCollection();
-    scene?.setProject(projectView.querySelectorAll('.part-stage'));
-  } else scene?.setProject(null, true);
+    scene?.setProject(next.project.slug, projectView.querySelectorAll('.part-stage'));
+  } else scene?.setProject(null, null, true);
   if (!focus) return;
   if (next.name === 'home') (returnTarget && !collection.inert ? returnTarget : aboutLink).focus({ preventScroll: true });
   else {
@@ -103,7 +103,7 @@ function showRoute(restore = false, focus = true) {
 function navigate(hash) {
   scrollPositions.set(entry, scrollY);
   entry = crypto.randomUUID();
-  history.pushState({ prototypeEntry: entry }, '', hash);
+  history.pushState({ prototypeEntry: entry }, '', new URL(hash, location.href));
   showRoute();
 }
 document.addEventListener('click', event => {
@@ -125,4 +125,11 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && document.body.dataset.view !== 'home') { event.preventDefault(); navigate('#/'); }
 });
 document.addEventListener('pointerdown', () => { document.body.dataset.input = 'pointer'; }, { capture: true });
-showRoute(false, location.hash.startsWith('#/projects/') || location.hash === '#/about');
+const legacyProject = window.PORTFOLIO_PROJECTS.find(project => location.hash === `#project-${project.id}`);
+if (legacyProject && !projects.includes(legacyProject)) {
+  location.replace(new URL(`../legacy.html${location.hash}`, document.baseURI));
+} else {
+  if (legacyProject) history.replaceState(history.state, '', new URL(`#/projects/${legacyProject.slug}`, location.href));
+  else if (location.hash === '#about-section' || location.hash === '#contact') history.replaceState(history.state, '', new URL('#/about', location.href));
+  showRoute(false, location.hash.startsWith('#/projects/') || location.hash === '#/about');
+}

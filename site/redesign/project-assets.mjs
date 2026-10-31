@@ -7,7 +7,7 @@ export const projectAssets = [
 ];
 
 // Each contact keeps its exported end cap; all eight meshes belong to one section.
-export const switchParts = [
+const switchParts = [
   { label: 'Blue stem', nodes: ['Low Switch_Gray Plastic_0 - Web'] },
   { label: 'Clear top housing', nodes: ['Low Top_Low Top_0 - Web'] },
   { label: 'Spring', nodes: ['Low Spring_Metal_0 - Web'] },
@@ -15,3 +15,33 @@ export const switchParts = [
   { label: 'First metal contact', nodes: ['Low LED_Metal_0.001 - Web', 'Low LED_Metal_0.005 - Web'] },
   { label: 'Second metal contact', nodes: ['Low LED_Metal_0.011 - Web', 'Low LED_Metal_0.012 - Web'] }
 ];
+
+export const projectParts = {
+  'carry-the-computation': { rotation: [.35, -.55, -.12], parts: switchParts },
+  doxa: {
+    rotation: [.15, -Math.PI / 2 + .3, -.03],
+    parts: [
+      { label: 'Main upper display', nodes: ['DOXA - Main upper display - Web'] },
+      { label: 'Main lower display', nodes: ['DOXA - Main lower display - Web'] },
+      { label: 'Satellite displays and stands', nodes: ['DOXA - Satellite displays - Web', 'DOXA - Satellite stands - Web'] },
+      { label: 'Main frame and support', nodes: ['DOXA - Main frame - Web', 'DOXA - Center support - Web'] },
+      { label: 'Workstations and worktops', nodes: ['DOXA - Workstation frames - Web', 'DOXA - Worktops - Web'] },
+      { label: 'Station structure', nodes: ['DOXA - Station structure - Web'] }
+    ]
+  },
+  'visio-technologica': {
+    rotation: [.18, -.38, .05],
+    parts: [
+      { label: 'Outer shell and button', primitives: [0, 2] },
+      { label: 'Lenses and optical mounts', primitives: [10, 11, 13] },
+      { label: 'Head straps', primitives: [5] },
+      { label: 'Face cushion', primitives: [4] },
+      { label: 'Inner housing and controls', primitives: [1, 3, 6, 12] },
+      { label: 'Optical covers and accents', primitives: [7, 8, 9] }
+    ]
+  },
+  'matrix-lamp': {
+    rotation: [0, 0, -.35], repeat: true,
+    parts: Array.from({ length: 7 }, () => ({ label: 'LED diode', nodes: ['Cylinder_0 - Web', 'Cylinder_1 - Web'] }))
+  }
+};

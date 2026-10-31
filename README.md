@@ -4,33 +4,29 @@ A portfolio of interactive experiences, installations, and physical objects by J
 
 ## A connected collection of work
 
-The website presents seven projects as a spatial network connected through shared skills:
+The main page presents five projects as a collection of draggable 3D objects:
 
 - **DOXA** — an interactive installation exploring how information changes across a simulated social network.
 - **VISIO TECHNOLOGICA** — a VR journey through Berlin that explores technological perception using the ICAROS.
 - **VEILED PANOPTICON** — an installation prototype that makes concealed presence affect a projected figure through WiFi sensing.
-- **Improving Futurium** — an exhibition proposal and character demonstration exploring AI, representation, and framing.
-- **Hyperreal Ravelord** — a personal Blender jewellery study inspired by BEASTBOY’s album.
 - **Matrix Lamp** — a layered, repairable LED lamp with animated ambient light.
 - **Carry the Computation** — an installation that makes a language model’s operation depend on visitors’ physical labour.
 
 ## Website experience
 
-The separate [redesign preview](https://juliuswenk.github.io/portfolio/redesign/) combines the minimal wireframe with the five-project physics collection. Its source and checks are in `site/redesign/`; the existing portfolio remains the main site.
+The [main portfolio](https://juliuswenk.github.io/portfolio/) now uses the physics collection and exploded project pages developed in the redesign. The former `/redesign/` address redirects to the main page while preserving project links. The earlier seven-project network portfolio remains at [legacy.html](https://juliuswenk.github.io/portfolio/legacy.html), including Improving Futurium and Hyperreal Ravelord.
 
-The opening network links the projects through their shared disciplines. Selecting a project brings its main image into the reading layout, while the network remains visible as context. Scrolling between projects moves through the network to the next work.
+Objects drop onto a dark surface and can be dragged before opening their projects. Carry the Computation, DOXA and VISIO TECHNOLOGICA separate into six component groups while reading. Matrix Lamp repeats its complete LED above every section. Returning reassembles the selected object and preserves the collection's arrangement. About & Contact includes the biography, CV, contact links, asset credits and Impressum.
 
-At widths of 1000px and above, case studies place media on the left and text on the right. Below 1000px, a large portrait greets visitors above the introduction, and the network gives way to an ordinary scrolling page: About, then project heroes, summaries, stories, and supporting media. Each project introduces its intention, Julius’s contribution, and its outcome, with further technical detail available in expandable sections where relevant. Images can be enlarged for closer inspection.
+The full name contracts to JW while reading. JW and Escape return home. Project addresses and browser history preserve reading positions. Reduced motion disables animated travel and sensor play. Optional phone tilt and shake interactions are enabled from the motion button; ordinary dragging and keyboard project links remain available independently. Failed 3D leaves clickable cube placeholders and readable content.
 
-The About section introduces Julius’s background, skills, and experience. Desktop pairs it with an animated 3D portrait; smaller screens place that portrait in the opening, where its greeting replays on return. Hyperreal Ravelord includes an interactive necklace turntable. A named Projects menu provides direct access to every case study.
+## Source, preview and checks
 
-## Motion and loading
+`site/index.html` is the main document. Its base URL keeps shared scripts, styles, models and media in their existing locations under `site/redesign/` and `site/assets/`. The old `site/redesign/index.html` redirects home; `site/legacy.html` retains the previous portfolio. Serve `site/` and open `/` for local preview.
 
-Responsive images and deferred media loading keep the opening focused on browsing. A brief branded loading view offers a way to continue while images arrive. The avatar begins as a still image, with its animated model loading separately; on desktop, interactive video loads when a visitor approaches or engages with its project. Below 1000px, the necklace remains a still until explicitly activated.
+Run `node site/redesign/check.mjs` and `node site/redesign/check-motion.mjs`. Browser geometry checks live at `/redesign/check-project-parts.html`. The preserved wireframe uses `node site/wireframe/check.mjs`; `node check.cjs` checks the previous site at `legacy.html`. Implementation details and model groupings are documented in `site/redesign/README.md`.
 
-Still and Motion views accommodate different preferences. Reduced-motion and reported constrained connections influence automatic media loading, with explicit controls available for optional animation. Navigation supports keyboard access. Smaller screens use header navigation and a normal page footer instead of a fixed bottom bar.
-
-The site uses HTML, CSS, and JavaScript, with Three.js for the animated portrait and Vimeo for embedded project films.
+GitHub Actions publishes `site/` to GitHub Pages when website changes reach `main`.
 
 ## Credits
 
@@ -46,4 +42,4 @@ Julius is looking to join a team creating interactive experiences, installations
 - [Instagram — @juliuswenk](https://www.instagram.com/juliuswenk/)
 - [GitHub — juliuswenk](https://github.com/juliuswenk)
 
-The website includes an Impressum accessible from its footer.
+The main website includes an Impressum on About & Contact; the previous site retains its footer link.

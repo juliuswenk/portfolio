@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Project part checks</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<p role="status">Checking project parts…</p>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createProjectParts } from './project-parts.mjs';
+import { projectAssets, projectParts } from './project-assets.mjs?v=project-parts-1';
+const status = document.querySelector('[role="status"]');
+function assert(condition, message) { if (!condition) throw new Error(message); }
+try {
+  for (const asset of projectAssets.filter(asset => projectParts[asset.slug])) {
+    const config = projectParts[asset.slug];
+    const { scene: model } = await new GLTFLoader().loadAsync(`./assets/${asset.file}.glb?v=cobalt-glitter-1`);
+    model.scale.setScalar(1.3);
+    model.position.set(2, -1, .5);
+    model.rotation.set(1.2, .2, -.15);
+    model.updateMatrixWorld(true);
+    const original = [];
+    model.traverse(mesh => { if (mesh.isMesh) original.push({ mesh, matrix: mesh.matrixWorld.clone(), material: mesh.material }); });
+    const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, .1, 40);
+    camera.position.set(.4, -.7, 16); camera.updateMatrixWorld(true);
+    const originalChildren = new Set(model.children);
+    const view = createProjectParts(model, camera, config);
+    const groups = model.children.filter(child => !originalChildren.has(child));
+    assert(groups.length === config.parts.length, `${asset.name}: every section has a group`);
+    assert(original.every(({ mesh }) => groups.includes(mesh.parent)), 'Every original mesh belongs to a reading group');
+    function assembled() {
+      model.updateMatrixWorld(true);
+      for (const { mesh, matrix, material } of original) {
+        assert(mesh.matrixWorld.elements.every((value, i) => Math.abs(value - matrix.elements[i]) < 1e-6), 'Reassembly restores every mesh transform');
+        assert(mesh.material === material, 'Original materials survive');
+      }
+    }
+    assembled();
+    let scroll = 0;
+    const stages = Array.from({ length: config.parts.length }, (_, index) => ({ getBoundingClientRect: () => ({ left: 20, top: 120 + index * 800 - scroll, width: innerWidth - 40, height: 260 }) }));
+    view.setProject(stages);
+    view.update(0, false); assembled();
+    view.update(.425, false);
+    assert(view.visible, 'Opening stays visible');
+    view.update(.425, false);
+    function aligned() {
+      model.updateMatrixWorld(true);
+      groups.forEach((group, index) => {
+        const p = group.getWorldPosition(new THREE.Vector3()).project(camera), rect = stages[index].getBoundingClientRect();
+        assert(Math.abs((p.x + 1) * innerWidth / 2 - rect.left - rect.width / 2) < .001, 'Part stays horizontally aligned');
+        assert(Math.abs((1 - p.y) * innerHeight / 2 - rect.top - rect.height / 2) < .001, 'Part stays with its scrolling section');
+      });
+    }
+    aligned();
+    assert(groups.every(group => group.visible), 'Every reading group is visible');
+    if (config.repeat) groups.forEach(group => {
+      assert(group.children.length === original.length, 'Every LED includes both resin and legs');
+      group.children.forEach(mesh => assert(original.some(source => source.mesh.geometry === mesh.geometry && source.material === mesh.material), 'LED copies share original geometry and glitter materials'));
+    });
+    assert(!view.update(0, false), 'Settled reading does not keep rendering');
+    scroll = 850; view.invalidate(); view.update(0, false); aligned();
+    view.setProject(null);
+    stages.forEach(stage => { stage.getBoundingClientRect = () => { throw new Error('Return accessed detached reading DOM'); }; });
+    view.update(.85, false); assembled();
+    assert(!view.visible, 'Return completes');
+    if (config.repeat) assert(groups.filter(group => group.visible).length === 1, 'Returning hides all repeated LEDs');
+    const fresh = Array.from({ length: config.parts.length }, () => ({ getBoundingClientRect: () => ({ left: 20, top: 120, width: innerWidth - 40, height: 260 }) }));
+    view.setProject(fresh, true); view.update(0, true);
+    assert(view.visible, 'Reduced motion still displays all parts');
+    view.setProject(null, true); assembled();
+    assert(!view.visible, 'Reduced motion returns immediately');
+  }
+  status.textContent = 'Passed for Switch, DOXA, VISIO and Matrix Lamp: complete grouping, original meshes/materials, repeated LEDs, section alignment, scrolling, idle rendering, detached DOM, exact reassembly and reduced motion.';
+} catch (error) {
+  status.textContent = `FAILED: ${error.message}`;
+  throw error;
+}
+</script>
+</html>
