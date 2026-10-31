@@ -1,7 +1,7 @@
 import '../projects.js';
 import '../media.js';
 import { escapeHTML, routeFromHash, renderProject } from '../wireframe/content.mjs?v=veiled-video-top-1';
-import { projectAssets, projectParts } from './project-assets.mjs?v=arduino-parts-1';
+import { projectAssets, projectParts } from './project-assets.mjs?v=assembled-xray-1';
 
 const projects = projectAssets.map(asset => window.PORTFOLIO_PROJECTS.find(project => project.slug === asset.slug));
 const home = document.querySelector('#home');
@@ -38,7 +38,7 @@ function loadCollection() {
   loading.hidden = false;
   collection.inert = true;
   loadTimer = setTimeout(showFallback, 15000);
-  import('./scene.mjs?v=arduino-parts-1').then(module => module.createCollection({
+  import('./scene.mjs?v=assembled-xray-1').then(module => module.createCollection({
     canvas, collection, signal: loadAbort.signal,
     isHome: () => document.body.dataset.view === 'home',
     onOpen: slug => navigate(`#/projects/${slug}`),

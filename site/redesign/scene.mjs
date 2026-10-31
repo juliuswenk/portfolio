@@ -10,10 +10,10 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { createDrop } from './drop-physics.mjs?v=relative-tilt-2';
 import { applyCobaltScattering } from './cobalt-sss.mjs';
-import { projectAssets, projectParts } from './project-assets.mjs?v=arduino-parts-1';
+import { projectAssets, projectParts } from './project-assets.mjs?v=assembled-xray-1';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
 import { setupMotion } from './motion.mjs?v=relative-tilt-2';
-import { createProjectParts } from './project-parts.mjs?v=arduino-parts-1';
+import { createProjectParts } from './project-parts.mjs?v=assembled-xray-1';
 
 export async function createCollection({ canvas, collection, signal, isHome, onOpen, onFailure }) {
   signal.throwIfAborted();
@@ -60,6 +60,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
     disposed = true;
     cancelAnimationFrame(frameId);
     motion?.dispose();
+    partViews?.forEach(view => view?.dispose());
     events.abort();
     signal.removeEventListener('abort', dispose);
     observer.disconnect();

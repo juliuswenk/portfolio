@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createXray, createXrayMaterial } from './xray.mjs';
 
 export function createProjectParts(model, camera, config) {
   model.updateMatrixWorld(true);
@@ -14,41 +15,80 @@ export function createProjectParts(model, camera, config) {
     }
     return meshes;
   });
-  let repeatedPart;
+  const inverse = model.matrixWorld.clone().invert();
+  const bounds = new THREE.Box3();
+  const sources = sourceMeshes.map(mesh => {
+    const matrix = new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld);
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    bounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(matrix));
+    return { mesh, matrix };
+  });
+  const center = bounds.getCenter(new THREE.Vector3());
+  const contextMaterial = createXrayMaterial(0);
+  contextMaterial.name = 'Faint assembled X-ray';
+  const highlights = [], contextMeshes = [];
   const parts = selections.map((meshes, index) => {
-    if (config.repeat && index > 0) {
-      const group = repeatedPart.group.clone(true);
-      group.visible = false;
-      model.add(group);
-      return { ...repeatedPart, group };
-    }
     if (!meshes.length || meshes.some(mesh => !mesh?.isMesh)) throw new Error(`Missing project mesh: ${config.parts[index].label}`);
-    const box = new THREE.Box3();
-    meshes.forEach(mesh => box.expandByObject(mesh));
     const group = new THREE.Group();
-    group.position.copy(model.worldToLocal(box.getCenter(new THREE.Vector3())));
+    group.name = `Section model: ${config.parts[index].label}`;
+    group.position.copy(center);
     model.add(group);
     group.updateMatrixWorld(true);
-    meshes.forEach(mesh => group.attach(mesh));
+    for (const source of sources) {
+      if (meshes.includes(source.mesh)) {
+        let mesh = source.mesh;
+        if (config.repeat && index > 0) {
+          mesh = new THREE.Mesh(source.mesh.geometry, source.mesh.material);
+          mesh.castShadow = source.mesh.castShadow;
+          mesh.receiveShadow = source.mesh.receiveShadow;
+          mesh.applyMatrix4(source.matrix);
+          mesh.position.sub(center);
+          group.add(mesh);
+        } else group.attach(mesh);
+        highlights.push(mesh);
+      } else {
+        const mesh = new THREE.Mesh(source.mesh.geometry, contextMaterial);
+        mesh.applyMatrix4(source.matrix);
+        mesh.position.sub(center);
+        mesh.visible = false;
+        // Faint context must not intercept picking when the collection returns home.
+        mesh.raycast = () => {};
+        group.add(mesh);
+        contextMeshes.push(mesh);
+      }
+    }
     group.visible = !config.repeat || index === 0;
-    const part = { group, home: group.position.clone(), size: box.getSize(new THREE.Vector3()).divide(model.scale) };
-    if (config.repeat) repeatedPart = part;
-    return part;
+    return group;
   });
-  const inspections = config.parts.map(part => new THREE.Quaternion().setFromEuler(new THREE.Euler(...(part.rotation || config.rotation))));
+  const xray = createXray(highlights);
+  const homeRotation = new THREE.Quaternion();
+  const size = new THREE.Vector3();
   const position = new THREE.Vector3(), scale = new THREE.Vector3(), quaternion = new THREE.Quaternion();
   let stages = [], progress = 0, opening = false, dirty = true;
   function restore() {
-    parts.forEach(({ group, home }, index) => {
-      group.position.copy(home); group.quaternion.identity(); group.scale.setScalar(1);
+    xray.update(0);
+    contextMeshes.forEach(mesh => { mesh.visible = false; });
+    parts.forEach((group, index) => {
+      group.position.copy(center); group.quaternion.identity(); group.scale.setScalar(1);
       group.visible = !config.repeat || index === 0;
     });
   }
   return {
+    dispose() {
+      restore(); xray.dispose();
+      contextMeshes.forEach(mesh => mesh.removeFromParent());
+      contextMaterial.dispose();
+    },
     get visible() { return opening || progress > 0; },
     setProject(nextStages, immediate = false) {
       opening = Boolean(nextStages);
-      if (nextStages) stages = Array.from(nextStages);
+      if (nextStages) {
+        stages = Array.from(nextStages);
+        if (!progress) {
+          homeRotation.copy(model.quaternion);
+          bounds.clone().applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(homeRotation)).getSize(size);
+        }
+      }
       // Retain the last screen positions after the reading DOM is removed on return.
       else stages = stages.map(stage => {
         const rect = stage.getBoundingClientRect();
@@ -65,21 +105,23 @@ export function createProjectParts(model, camera, config) {
       dirty = false;
       if (!progress) { restore(); return true; }
       const eased = progress * progress * (3 - 2 * progress);
-      const inverse = model.quaternion.clone().invert();
+      xray.update(eased);
+      contextMaterial.uniforms.xrayGain.value = .045 * eased;
+      contextMeshes.forEach(mesh => { mesh.visible = true; });
+      quaternion.copy(model.quaternion).invert().multiply(homeRotation);
       const units = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / innerHeight;
       model.updateMatrixWorld(true);
-      parts.forEach(({ group, home, size }, index) => {
-        group.visible = true;
+      parts.forEach(group => { group.visible = true; });
+      parts.forEach((group, index) => {
         const rect = stages[index].getBoundingClientRect();
         position.set(camera.position.x + (rect.left + rect.width / 2 - innerWidth / 2) * units,
           camera.position.y + (innerHeight / 2 - rect.top - rect.height / 2) * units, 0);
         model.worldToLocal(position);
-        group.position.lerpVectors(home, position, eased);
-        quaternion.copy(inverse).multiply(inspections[index]);
+        group.position.lerpVectors(center, position, eased);
         group.quaternion.identity().slerp(quaternion, eased);
-        const pixels = Math.min(240, rect.width * .65, rect.height * .7);
-        const partScale = pixels * units / Math.max(size.x, size.y, size.z);
-        scale.setScalar(partScale).divide(model.scale);
+        const pixels = Math.min(285, rect.width * .8, rect.height * .82);
+        const modelScale = pixels * units / Math.max(size.x, size.y, size.z);
+        scale.setScalar(modelScale).divide(model.scale);
         group.scale.set(1, 1, 1).lerp(scale, eased);
       });
       return true;

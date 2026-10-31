@@ -17,9 +17,8 @@ const switchParts = [
 ];
 
 export const projectParts = {
-  'carry-the-computation': { rotation: [.35, -.55, -.12], parts: switchParts },
+  'carry-the-computation': { parts: switchParts },
   doxa: {
-    rotation: [.15, -Math.PI / 2 + .3, -.03],
     parts: [
       { label: 'Main upper display', nodes: ['DOXA - Main upper display - Web'] },
       { label: 'Main lower display', nodes: ['DOXA - Main lower display - Web'] },
@@ -30,7 +29,6 @@ export const projectParts = {
     ]
   },
   'visio-technologica': {
-    rotation: [.18, -.38, .05],
     parts: [
       { label: 'Outer shell and button', primitives: [0, 2] },
       { label: 'Lenses and optical mounts', primitives: [10, 11, 13] },
@@ -41,16 +39,15 @@ export const projectParts = {
     ]
   },
   'matrix-lamp': {
-    rotation: [0, 0, -.35], repeat: true,
+    repeat: true,
     parts: Array.from({ length: 7 }, () => ({ label: 'LED diode', nodes: ['Cylinder_0 - Web', 'Cylinder_1 - Web'] }))
   },
   'veiled-panopticon': {
-    rotation: [Math.PI / 2 - .35, -.2, -.08],
     parts: [
       { label: 'Circuit board and indicator', nodes: ['Arduino - Circuit board and indicator'] },
-      { label: 'USB connector', nodes: ['Arduino - USB connector'], rotation: [.18, Math.PI / 2 - .35, -.1] },
+      { label: 'USB connector', nodes: ['Arduino - USB connector'] },
       { label: 'Pin headers', nodes: ['Arduino - Pin headers'] },
-      { label: 'Power input and capacitors', nodes: ['Arduino - Power input and capacitors'], rotation: [.18, Math.PI / 2 - .35, -.1] },
+      { label: 'Power input and capacitors', nodes: ['Arduino - Power input and capacitors'] },
       { label: 'Microcontroller and socket', nodes: ['Arduino - Microcontroller and socket'] },
       { label: 'Clock, reset and support electronics', nodes: ['Arduino - Clock, reset and support electronics'] }
     ]
