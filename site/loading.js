@@ -69,7 +69,7 @@
     import('./about-model.js?v=mobile-portrait-2').catch(() => avatarFailed());
   }
   function avatarFailed() {
-    avatarStatus.textContent = 'Animation unavailable. You can still explore About.';
+    avatarStatus.textContent = 'Avatar animation unavailable. The About section is still accessible.';
   }
   addEventListener('avatarready', () => { avatarStatus.textContent = ''; });
   addEventListener('avatarerror', avatarFailed);

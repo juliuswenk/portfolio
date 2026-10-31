@@ -39,7 +39,7 @@ if (video) {
     }
     sync();
   });
-  [networkButton,readingButton].filter(Boolean).forEach(host=>host.setAttribute('aria-description', 'Plays one turn when selected. Afterwards move the mouse left or right, drag horizontally, or use the arrow keys to rotate.'));
+  [networkButton,readingButton].filter(Boolean).forEach(host=>host.setAttribute('aria-description', 'Select to play one rotation. Then move the pointer left or right, drag horizontally, or use the arrow keys to rotate.'));
   let focused = false, completed = false, reset = false, mode = 'paused';
   let frame = 0, lastX = null, dragging = false, scheduled = false;
 

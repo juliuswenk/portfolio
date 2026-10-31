@@ -4,7 +4,7 @@ window.PORTFOLIO_PROJECTS = [
     "id": 1,
     "title": "DOXA",
     "slug": "doxa",
-    "atAGlance": "How do different groups come to construct different truths? DOXA lets visitors create AI agents and follow statements as they change across a simulated social network. I developed the concept, interfaces, print materials, and software, with AI coding assistance and exhibition support. Exhibited at Ars Electronica in 2026, it drew visitors into the exchange, though the system’s complexity sometimes obscured the broader question.",
+    "atAGlance": "DOXA lets visitors create AI agents and follow how they retell statements across a simulated social network. I developed the concept and built the interfaces and software with AI coding assistance. I also designed the print materials. First prototyped for *Liminal Fields*, the installation was developed further for Ars Electronica in 2026. Visitors became curious about their agents, though the system’s complexity sometimes made its purpose harder to grasp.",
     "discipline": "Interactive installation",
     "skills": [
       "Critical design",
@@ -18,7 +18,7 @@ window.PORTFOLIO_PROJECTS = [
       "src": "assets/doxa-installation-melissa.webp",
       "width": 3000,
       "height": 2000,
-      "title": "Installation overview",
+      "title": "DOXA installation overview",
       "credit": "© Melissa Papafio-Roberts",
       "use": "hero",
       "source": "2 DOXA © Melissa Papafio-Roberts.png"
@@ -28,7 +28,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/doxa-02.webp",
         "width": 1440,
         "height": 960,
-        "title": "Visitor at the installation",
+        "title": "Visitor using the installation",
         "credit": "© Melissa Papafio-Roberts",
         "use": "network",
         "source": "1 DOXA © Melissa Papafio-Roberts.png"
@@ -37,7 +37,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/doxa-03.webp",
         "width": 1440,
         "height": 960,
-        "title": "Interface and input detail",
+        "title": "Visitor interface and input controls",
         "credit": "© Melissa Papafio-Roberts",
         "use": "network",
         "source": "4 DOXA © Melissa Papafio-Roberts.png"
@@ -48,7 +48,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/doxa-diagram.png",
         "width": 1517,
         "height": 1226,
-        "title": "Agent behaviour and information flow",
+        "title": "Diagram of agent behaviour and information flow",
         "credit": "",
         "use": "detail",
         "source": "Diagramm DOXA.png",
@@ -58,7 +58,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/doxa-04.webp",
         "width": 1440,
         "height": 960,
-        "title": "Side view of the installation",
+        "title": "Installation viewed from the side",
         "credit": "© Melissa Papafio-Roberts",
         "use": "detail",
         "source": "3 DOXA © Melissa Papafio-Roberts.png"
@@ -67,7 +67,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/doxa-05.webp",
         "width": 1440,
         "height": 1440,
-        "title": "3D installation layout study",
+        "title": "3D study of the installation layout",
         "credit": "",
         "use": "detail",
         "source": "Aufbau Sketch 3D.png"
@@ -87,23 +87,23 @@ window.PORTFOLIO_PROJECTS = [
     "caseStudy": [
       {
         "title": "Experience & intention",
-        "text": "A joystick invites visitors to inspect the network. At satellite stations, a short personality questionnaire creates an agent that acts independently on their behalf. Visitors can introduce statements and follow how agents interpret and retell them. Returning later reveals what their agent has heard and how their statement has changed.\n\nThe simulation makes social connections and differing interpretations visible. It is an artistic exploration of designed behavioural assumptions, rather than a validated model of human communication."
+        "text": "Visitors use a joystick to inspect the network. At satellite stations, they answer a short personality questionnaire to create an agent that acts independently on their behalf. They can introduce a statement and follow how agents interpret and retell it. Returning later reveals what their agent has heard and how the statement has changed.\n\nI wanted to make the relationship between social connections and differing interpretations visible. The agents follow behavioural assumptions I designed. Their exchanges offer a way to experiment with those assumptions, without claiming to reproduce human communication accurately."
       },
       {
         "title": "My role & collaborators",
-        "text": "I developed the concept, interfaces, print materials, and software with assistance from AI coding tools. Andreas Ingerl supported the installation design. Lennard Lev and Thomas Kemnitz helped realise the Ars Electronica exhibition."
+        "text": "I developed the concept and built the interfaces and software with help from AI coding tools. I also designed the print materials. Andreas Ingerl supported the installation design. Lennard Lev and Thomas Kemnitz helped realise the Ars Electronica exhibition."
       },
       {
         "title": "Outcome & learning",
-        "text": "Visitors were curious about their agents and how messages changed. The joystick drew them in, and the satellite stations supported further exploration. Many understood the interaction and the idea that information changes through retelling, but the system's complexity made its broader purpose harder to grasp.\n\nThese are informal exhibition observations, rather than a structured visitor study. Further development would simplify the first interaction so visitors could begin experimenting before needing to understand the whole system."
+        "text": "Visitors were curious about their agents and how messages changed. The joystick drew them in, and the satellite stations gave them a way to explore further. Many understood that information changes through retelling, but the system’s complexity made its broader purpose harder to grasp.\n\nThese observations came from the exhibitions and informal feedback. Further development would simplify the first interaction so visitors could start experimenting before needing to understand the whole system."
       },
       {
         "title": "Key design decisions",
-        "text": "I replaced numerical grouping by personality similarity with four Gerlach-inspired Big Five profiles that shaped agents' placement and behaviour. Each agent eventually received one fixed profile, while its worldview could develop through received information.\n\nI also gave agents memory of earlier tellings. Repeated encounters could then bring an incoming statement into contact with an agent's previous interpretation, giving the exchange continuity."
+        "text": "I initially grouped agents by numerical personality similarity. I replaced this with four profiles inspired by Gerlach’s Big Five personality research, using them to shape each agent’s placement and behaviour. The assigned profile stayed fixed, while the agent’s worldview could develop through the messages it received.\n\nI also gave agents memory of earlier tellings. When a statement reached an agent again, it could respond in the context of its previous interpretation."
       },
       {
         "title": "Implementation details",
-        "text": "One master computer runs the simulation, a local language model, and the shared data. The visitor stations and network display connect over a local network.\n\nA BFI-10 questionnaire supplies Big Five scores used to assign each new agent to one of four Gerlach-inspired profiles. These profiles influence placement, connections, forwarding likelihood, and reframing. The profile remains fixed; the agent’s worldview develops through accumulated messages.\n\nStrands Agents connects the agents to **Qwen3:8B**, running locally through **Ollama**. Retelling prompts combine personality and behavioural instructions with the current worldview, incoming statement, and available context about the sender and previous retelling. A prompt-based drift allowance guides the extent of change at each step.\n\nA **Python** coordinator schedules agent activity and supplies state through a **WebSocket** server. Local CSV, JSON, and text files retain message versions and transmission records. **Electron, HTML, CSS, and JavaScript** support the interfaces; **Three.js** renders the network and message paths, allowing visitors to connect changes in wording with their route through the network.",
+        "text": "A master computer runs the simulation and a local language model, and stores their shared data. The visitor stations and network display connect to it over a local network.\n\nA BFI-10 personality questionnaire supplies Big Five scores used to assign each agent to one of four Gerlach-inspired profiles. The profile influences its position and connections, along with how likely it is to forward or reframe a message. The agent’s worldview develops as messages accumulate.\n\nStrands Agents connects the agents to **Qwen3:8B**, running locally through **Ollama**. Retelling prompts include personality instructions and the agent’s current worldview. They also provide the incoming statement and available context about its sender and previous retelling. A drift allowance in the prompt guides how much the wording may change at each step.\n\nA **Python** coordinator schedules agent activity and sends state through a **WebSocket** server. Local CSV, JSON, and text files store message versions and transmission records. The interfaces use **Electron, HTML, CSS, and JavaScript**. **Three.js** renders the network and message paths so visitors can follow changes in wording alongside the route a statement takes.",
         "expandable": true
       }
     ],
@@ -114,7 +114,7 @@ window.PORTFOLIO_PROJECTS = [
     "id": 2,
     "title": "VISIO TECHNOLOGICA",
     "slug": "visio-technologica",
-    "atAGlance": "How does a city change when we perceive it through technological infrastructure? VISIO TECHNOLOGICA lets visitors fly through a virtual Berlin using the ICAROS, borrowing camera and radio perception. I developed the concept, city streaming, visibility shaders, and flight-direction sensor, with coding assistance and interface and audio work by Lennard Lev. The functioning VR installation was exhibited at HTW Berlin’s Werkschau in 2026.",
+    "atAGlance": "Visitors steer the ICAROS by shifting their weight to fly through a virtual Berlin. Camera cones reveal parts of the city, while live radio streams become spatial audio. VISIO TECHNOLOGICA uses these different views to explore what technological sensing lets us perceive. I developed the concept, city streaming, visibility shaders, and an additional flight-direction sensor. Lennard Lev created the interfaces and radio audio. The VR installation was exhibited at HTW Berlin’s Werkschau in 2026.",
     "discipline": "VR experience for ICAROS",
     "skills": [
       "XR design",
@@ -127,7 +127,7 @@ window.PORTFOLIO_PROJECTS = [
       "src": "assets/visio-technologica-city-hero.png",
       "width": 898,
       "height": 1752,
-      "title": "Berlin scene with signal visualization",
+      "title": "Virtual Berlin with signal visualisation",
       "credit": "",
       "use": "hero",
       "source": "Codex-Bild 18. Sept. 2026, 12_00_42.png",
@@ -138,7 +138,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/visio-technologica-vr-participant.png",
         "width": 1086,
         "height": 1449,
-        "title": "Participant wearing a VR headset on ICAROS",
+        "title": "Visitor wearing a VR headset on the ICAROS",
         "credit": "",
         "use": "network",
         "source": "Codex-Bild 18. Sept. 2026, 11_55_01.png",
@@ -150,7 +150,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/visio-technologica-vr-participant.png",
         "width": 1086,
         "height": 1449,
-        "title": "Participant wearing a VR headset on ICAROS",
+        "title": "Visitor wearing a VR headset on the ICAROS",
         "credit": "",
         "use": "detail",
         "source": "Codex-Bild 18. Sept. 2026, 11_55_01.png",
@@ -160,7 +160,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/visio-technologica-04.webp",
         "width": 1440,
         "height": 760,
-        "title": "Berlin model overview",
+        "title": "Overview of the Berlin city model",
         "credit": "",
         "use": "detail",
         "source": "Bildschirmfoto 2026-06-05 um 19.35.38.png"
@@ -169,7 +169,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/visio-technologica-05.webp",
         "width": 1018,
         "height": 1440,
-        "title": "City scene development view",
+        "title": "Berlin scene during development",
         "credit": "",
         "use": "detail",
         "source": "Bildschirmfoto 2026-09-18 um 11.53.55.png"
@@ -188,23 +188,23 @@ window.PORTFOLIO_PROJECTS = [
     "caseStudy": [
       {
         "title": "Experience & intention",
-        "text": "In a fictional future where advertising systems track human perception, visitors evade them by borrowing technological senses. Headset passthrough gives way to a sonar-like scan of Berlin. Shifting their weight on the ICAROS controls flight; detailed textures appear inside camera cones, while faint geometry remains outside. Live radio streams become spatial audio sources.\n\nA simulated battery ends the experience and returns visitors to their surroundings. Designed for technologically curious museum visitors across a broad age range, the journey asks what each sensing system makes accessible and what remains beyond its reach."
+        "text": "In a fictional future, advertising systems track human perception. Visitors evade them by borrowing technological senses. A view of their real surroundings through the headset gives way to a sonar-like scan of Berlin. Shifting their weight on the ICAROS controls flight. Detailed textures appear inside camera cones, while faint geometry remains outside. Live radio streams can be heard from different directions as visitors move through the city.\n\nA simulated battery ends the flight and returns visitors to their surroundings. Designed for museum visitors across a broad age range, the experience explores what each sensing system reveals and what it leaves out."
       },
       {
         "title": "My role & collaborators",
-        "text": "I developed the concept and experience design, streamed Berlin’s 3D city data, and implemented the selective-visibility shaders. Through my employment at Futurium and HTW Berlin, I developed the additional ICAROS orientation sensor used for flight.\n\nLennard Lev designed the interfaces and implemented live radio streaming. OpenCode, Claude, and Codex assisted with coding. The city model was streamed through Cesium ion."
+        "text": "I developed the concept and experience design, streamed Berlin’s 3D city data, and built the shaders that control visibility. Through my employment at Futurium and HTW Berlin, I developed the additional ICAROS orientation sensor used for flight.\n\nLennard Lev designed the interfaces and implemented live radio streaming. I used OpenCode alongside Claude and Codex for coding assistance. The city model was streamed through Cesium ion."
       },
       {
         "title": "Outcome & learning",
-        "text": "The completed installation combined weight-controlled flight, the transition from real surroundings into Berlin, selective visibility, spatial live radio, and the battery ending in a functioning experience exhibited at HTW Berlin’s Werkschau in 2026.\n\nDeveloping the sensor taught me to consider sensing, physical movement, and virtual response as one connected experience. Their coordination shapes how immersive and enjoyable the flight feels."
+        "text": "The installation was exhibited at HTW Berlin’s Werkschau in 2026. It brought weight-controlled flight into a virtual Berlin, with selective visibility and spatial live radio. A transition from the visitor’s real surroundings opened the experience, and the simulated battery brought it to an end.\n\nDeveloping the sensor taught me how closely physical movement and virtual response need to work together. Their coordination shapes how immersive and enjoyable the flight feels."
       },
       {
         "title": "Key design decisions",
-        "text": "Detailed textures within camera cones and faint geometry elsewhere make the limits of technical perception part of the experience.\n\nAn algorithm identifies building top edges and selects camera positions from the city geometry. These cones are a speculative visualization of technological perception; they do not document actual surveillance coverage."
+        "text": "I used detailed textures inside camera cones and faint geometry elsewhere to let visitors experience the limits of each view as they flew.\n\nAn algorithm finds the top edges of buildings and uses the city geometry to choose camera positions. The resulting cones are speculative. They do not show actual surveillance coverage."
       },
       {
         "title": "Implementation details",
-        "text": "The experience uses **WebXR, Three.js, and SvelteKit**, with Berlin’s 3D tiles streamed through **Cesium ion**. Custom shaders control which city textures become visible within the generated camera cones.\n\nAn added gyroscope sensor supplies orientation information from the ICAROS, allowing visitors to control flight direction by shifting their weight. Live radio streams are positioned as 3D audio sources within the city, making them audible from different directions as visitors move through the environment.",
+        "text": "The experience uses **WebXR and Three.js** within **SvelteKit**. Berlin’s 3D tiles stream through **Cesium ion**, and custom shaders control which textures appear inside the generated camera cones.\n\nAn added gyroscope sensor measures the ICAROS’s orientation, allowing visitors to steer by shifting their weight. Live radio streams are positioned as 3D audio sources within the city, so their direction changes as visitors move.",
         "expandable": true
       }
     ],
@@ -215,7 +215,7 @@ window.PORTFOLIO_PROJECTS = [
     "id": 3,
     "title": "VEILED PANOPTICON",
     "slug": "veiled-panopticon",
-    "atAGlance": "What happens when walls no longer separate seen from unseen? VEILED PANOPTICON uses WiFi signal changes to make a hidden person’s presence affect a projected figure. I developed the concept, sensing setup, and hardware, with AI-assisted firmware and software and collaborators’ projection design. Built in four days and shown internally at HTW Berlin, the prototype prompted fascination and discomfort, while its noisy sensing remained approximate.",
+    "atAGlance": "A hidden person’s movements affect a projected figure through changes in WiFi signal strength. The person and the projection’s audience cannot see each other, so they discover the connection through conversation. I developed the concept and built the sensing hardware with AI assistance on firmware and software. Collaborators created the projection. Built in four days, VEILED PANOPTICON remained an approximate sensing prototype. At an internal HTW Berlin exhibition, it prompted both fascination and discomfort.",
     "video": "1191205459",
     "discipline": "Physical computing installation",
     "skills": [
@@ -229,7 +229,7 @@ window.PORTFOLIO_PROJECTS = [
       "src": "assets/veiled-panopticon-01.webp",
       "width": 1080,
       "height": 1440,
-      "title": "Live projection in the installation space",
+      "title": "Projected figure in the installation space",
       "credit": "",
       "use": "hero",
       "source": "IMG_2516.JPG"
@@ -248,7 +248,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/veiled-panopticon-03.webp",
         "width": 1080,
         "height": 1440,
-        "title": "Sensing panels across the space",
+        "title": "Sensing panels arranged across the space",
         "credit": "",
         "use": "network",
         "source": "IMG_2487.JPG"
@@ -259,7 +259,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/veiled-panopticon-04.webp",
         "width": 1080,
         "height": 1440,
-        "title": "Receiver mounted on a panel",
+        "title": "Receiver mounted on a wooden panel",
         "credit": "",
         "use": "detail",
         "source": "IMG_2486.JPG"
@@ -268,7 +268,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/veiled-panopticon-05.webp",
         "width": 1440,
         "height": 744,
-        "title": "Spatial context of the installation",
+        "title": "View of the installation space",
         "credit": "",
         "use": "detail",
         "source": "IMG_2496.JPG"
@@ -297,23 +297,23 @@ window.PORTFOLIO_PROJECTS = [
     "caseStudy": [
       {
         "title": "Experience & intention",
-        "text": "A person near concealed sensors affects a shadowy figure’s position: left, middle, or right. They cannot see the projection, while its audience cannot see them. Conversation reveals who is causing the response and how.\n\nThe course brief asked us to make invisible signals experiential. Using familiar WiFi infrastructure without a camera or direct line of sight turns concealed sensing into a question of awareness, privacy, and consent."
+        "text": "A person near concealed sensors affects whether a shadowy figure appears on the left, in the middle, or on the right. They cannot see the projection, and its audience cannot see them. Visitors have to talk to one another to discover who is causing the response.\n\nThe course brief asked us to make invisible signals perceptible. I used familiar WiFi hardware to sense presence without a camera or direct line of sight, raising questions about whether people know they are being sensed and can consent to it."
       },
       {
         "title": "My role & collaborators",
-        "text": "I developed the concept, designed the sensing setup, and built the hardware installation. AI coding tools assisted with firmware and software.\n\nLennard Lev and Lena Eibel developed the projection and visual language. Prof. Alexander Müller-Rakow and Christian Pflug guided the project."
+        "text": "I developed the concept and designed the sensing setup, then built the hardware installation. AI coding tools assisted with firmware and software.\n\nLennard Lev and Lena Eibel developed the projection and visual language. Prof. Alexander Müller-Rakow and Christian Pflug guided the project."
       },
       {
         "title": "Outcome & learning",
-        "text": "At the small internal exhibition, visitors expressed fascination with the setup and discomfort at its use of technology familiar from their homes. These were informal comments and observations, not a structured study or measured evaluation of sensing accuracy.\n\nDetection remained unreliable. Working around this limitation sparked my interest in physical computing, while showing how an experience can preserve an artistic intention and conceal technical instability. Further work would improve sensing reliability."
+        "text": "At the small internal exhibition, visitors expressed fascination with the setup and discomfort at its use of technology familiar from their homes. This feedback was informal. I did not conduct a structured visitor study or measure sensing accuracy.\n\nDetection remained unreliable. Working with the hardware sparked my interest in physical computing. It also showed me how an installation’s arrangement could support the intended experience while hiding technical instability. Further work would focus on making the sensing more reliable."
       },
       {
         "title": "Key design decisions",
-        "text": "Experiments with receiver placement and filtering could not separate movement reliably from signal noise within four days. I reduced the ambition from accurate tracking to approximate presence across three positions.\n\nSeparating the sensors from the projection made discovery happen between visitors. It also concealed unreliable readings by preventing an immediate comparison between a person’s position and the figure’s response. This limitation remains part of how I assess the prototype."
+        "text": "Within four days, experiments with receiver placement and filtering did not reliably separate movement from signal noise. I reduced the aim from accurate tracking to approximate presence across three positions.\n\nSeparating the sensors from the projection made visitors discover the connection through conversation. It also stopped them from immediately comparing a person’s position with the figure’s response, concealing unreliable readings. That limits what the prototype demonstrates about the sensing itself."
       },
       {
         "title": "Implementation details",
-        "text": "The installation uses four Arduino Nano ESP32 boards based on the ESP32-S3: one WiFi sender and three receivers. The sensing hardware is concealed behind wooden panels.\n\nThe system reads received signal strength, or **RSSI**. A person moving between the sender and receivers changes the signal readings. The software interprets these changes as approximate presence at the left, middle, or right receiver and uses that position to place the projected figure.\n\nFinding useful thresholds and filters was a central technical challenge. The readings remained sensitive to noise, so the installation demonstrated coarse presence sensing rather than reliable movement tracking. The prototype used RSSI; channel state information, or **CSI**, is a proposed next step.",
+        "text": "The installation uses four Arduino Nano ESP32 boards based on the ESP32-S3: one WiFi sender and three receivers. Wooden panels conceal the sensing hardware.\n\nThe system reads received signal strength, or **RSSI**. A person moving between the sender and receivers changes those readings. The software interprets the changes as approximate presence near the left, middle, or right receiver and moves the projected figure accordingly.\n\nFinding useful thresholds and filters was difficult because the readings remained noisy. The result was coarse presence sensing, with movement tracking still unreliable. The prototype used RSSI; channel state information, or **CSI**, is a proposed next step.",
         "expandable": true
       }
     ],
@@ -325,7 +325,7 @@ window.PORTFOLIO_PROJECTS = [
     "id": 4,
     "title": "Improving Futurium",
     "slug": "improving-futurium",
-    "atAGlance": "How can an exhibition make AI’s biases and framing tangible? Improving Futurium proposes a personalised character that accompanies visitors and later discusses the exhibition with them. I developed the character-generation and holographic-fan workflow within a team concept. In five days, we produced spatial visualisations and a working character demonstration for Futurium; the dialogue was prepared in advance, while the full exhibition remained a proposal.",
+    "atAGlance": "Our proposal for Futurium gives visitors a character based on their own photograph. It would accompany them through an exhibition and discuss what they encountered, with adjustable behaviour to reveal how AI can frame an account. I developed the workflow for generating the character and displaying it on a holographic fan. In five days, our team produced spatial visualisations and a working character demonstration. The dialogue was prepared in advance, and the full exhibition remained a proposal.",
     "discipline": "Exhibition concept",
     "skills": [
       "Critical design",
@@ -338,7 +338,7 @@ window.PORTFOLIO_PROJECTS = [
       "src": "assets/improving-futurium-01.webp",
       "width": 1440,
       "height": 1440,
-      "title": "Exhibition walkthrough visualization",
+      "title": "Visualisation of the proposed exhibition route",
       "credit": "Spatial visualisation by Conrad Lischewsky · exhibition proposal",
       "use": "hero",
       "source": "4if.jpg"
@@ -368,7 +368,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/improving-futurium-04.webp",
         "width": 1440,
         "height": 1440,
-        "title": "Exhibition scene detail",
+        "title": "Detail of the exhibition proposal",
         "credit": "Spatial visualisation by Conrad Lischewsky · exhibition proposal",
         "use": "detail",
         "source": "6if.jpg"
@@ -377,7 +377,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/improving-futurium-05.webp",
         "width": 1440,
         "height": 1440,
-        "title": "Spatial layout from above",
+        "title": "Proposed spatial layout from above",
         "credit": "Spatial visualisation by Conrad Lischewsky · exhibition proposal",
         "use": "detail",
         "source": "7if.jpg"
@@ -386,7 +386,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/improving-futurium-06.webp",
         "width": 1440,
         "height": 1440,
-        "title": "Information stations and visitor route",
+        "title": "Proposed information stations and visitor route",
         "credit": "Spatial visualisation by Conrad Lischewsky · exhibition proposal",
         "use": "detail",
         "source": "9if.jpg"
@@ -406,23 +406,23 @@ window.PORTFOLIO_PROJECTS = [
     "caseStudy": [
       {
         "title": "Experience & intention",
-        "text": "A visitor photograph becomes a 3D character that, in the proposed experience, accompanies them through information stations. On a holographic fan at the end, visitors would talk to it and adjust parameters such as temperature and intention.\n\nIts likeness makes representation personal: resembling a visitor does not mean faithfully expressing their perspective. Changing its behaviour would reveal how the same information can inform, bias, or reframe an account."
+        "text": "A visitor’s photograph becomes a 3D character. In the proposed exhibition, it would accompany them through information stations. At the end, they would speak to it on a holographic fan and adjust parameters such as temperature and intention.\n\nResembling the visitor would not guarantee that the character expressed their perspective. Changing its behaviour would let visitors compare how it presented the same information and question whose view it represented."
       },
       {
         "title": "My role & collaborators",
-        "text": "I developed the technological framework for character generation, animation, rendering, and fan playback, turning the team’s ideas into a demonstration.\n\nWe developed the spatial concept together. Conrad Lischewsky created the spatial visualisations. Andreas Ingerl led the educational project; Futurium provided the brief and received the final presentation."
+        "text": "I developed the workflow for generating and animating the character, then rendering it for playback on the holographic fan. This turned part of the team’s concept into a working demonstration.\n\nWe developed the spatial concept together. Conrad Lischewsky created the spatial visualisations. Andreas Ingerl led the educational project. Futurium provided the brief and received the final presentation."
       },
       {
         "title": "Outcome & learning",
-        "text": "We presented an exhibition proposal with spatial visualisations, character creation, and fan playback. Dialogue was prepared in advance; accompaniment through the stations and an adjustable live conversation were proposed features. This was a concept and demonstration, rather than an installed museum experience.\n\nI learned to turn a complex topic into a demonstrable concept within five days by finding a practical technological workflow."
+        "text": "We presented the exhibition proposal with spatial visualisations and a demonstration of character creation and fan playback. The dialogue was prepared in advance. Accompanying visitors through the stations and holding an adjustable live conversation remained proposed features.\n\nWorking within five days taught me to identify which part of a complex concept I could demonstrate and find a practical workflow to make it work."
       },
       {
         "title": "Key design decisions",
-        "text": "A character based on the visitor’s photograph provides a personal reference for questioning whose perspective an AI response expresses. Adjustable behaviour would make framing visible. Connecting information stations with a final conversation gives visitors a way to revisit what they encountered."
+        "text": "Basing the character on a visitor’s photograph made the question of representation personal. Its proposed behaviour controls would let visitors compare how the same character framed an account differently.\n\nPlacing the conversation after the information stations gave visitors a way to revisit what they had encountered."
       },
       {
         "title": "Implementation details",
-        "text": "The character workflow begins with a visitor photograph. **Meshy** generates the character from the image, **Mixamo** supplies animation, and **Blender** renders the animated character. The holographic fan’s software prepares the rendered animation for display.\n\nWe demonstrated character creation and playback on the holographic fan. The dialogue interaction was prepared in advance because of the limited timeframe. Character accompaniment through the stations and an adjustable final conversation formed the proposed exhibition experience.",
+        "text": "The workflow starts with a visitor’s photograph. **Meshy** generates a 3D character from the image, and **Mixamo** supplies animation. **Blender** renders the animated character, then the holographic fan’s software prepares it for display.\n\nWe demonstrated character creation and fan playback. With the time available, we prepared the dialogue in advance. The character’s accompaniment through the stations and an adjustable final conversation were part of the exhibition proposal.",
         "expandable": true
       }
     ],
@@ -433,7 +433,7 @@ window.PORTFOLIO_PROJECTS = [
     "id": 5,
     "title": "Hyperreal Ravelord",
     "slug": "hyperreal",
-    "atAGlance": "Hyperreal Ravelord is a personal Blender study inspired by BEASTBOY’s album of the same name. Made in 2018 to explore 3D tools, it takes the chain—a subject in the music—as a digital object. I modelled the necklace, based its pendant on an existing SVG logo, and created the materials, lighting, and rendering setup. The result was a digital necklace with animated renders, intended entirely for the screen.",
+    "atAGlance": "I made this digital necklace in Blender in 2018, inspired by BEASTBOY’s album *Hyperreal Ravelord*. The chain, a motif in the music, gave me a subject for exploring 3D tools. I modelled the necklace and created its materials and animated renders. The pendant uses an existing SVG logo. It was a personal fan project made for the screen, with no physical production intended.",
     "discipline": "3D asset · description pending",
     "context": "Personal fan project · 2018 · Digital jewellery study · Blender",
     "skills": [
@@ -453,7 +453,7 @@ window.PORTFOLIO_PROJECTS = [
         "frames": 360,
         "fps": 25
       },
-      "title": "Hyperreal Ravelord · interactive 3D necklace",
+      "title": "Hyperreal Ravelord necklace · interactive view",
       "credit": "",
       "use": "hero",
       "source": "Animation/0000.png–0359.png → transparent turntable videos; frame 0000 used as poster",
@@ -464,25 +464,25 @@ window.PORTFOLIO_PROJECTS = [
     "caseStudy": [
       {
         "title": "Intention & design",
-        "text": "I wanted to explore what I could make with 3D tools through a subject connected to music I enjoyed. The chain offered a way to translate a motif from the album into an object, with an existing SVG logo providing the starting point for the pendant."
+        "text": "I wanted to learn what I could make with 3D tools through a subject connected to music I enjoyed. The chain gave me an object to model, with an existing SVG logo as the starting point for the pendant."
       },
       {
         "title": "My role & process",
-        "text": "I modelled the necklace myself and developed its materials, lighting, and rendering setup entirely in Blender. The pendant was based on an existing SVG logo; the original graphic design was not my work."
+        "text": "I modelled the necklace in Blender and developed its materials and lighting. I also set up the animated renders. The pendant was based on an existing SVG logo, whose graphic design was not my work."
       },
       {
         "title": "Outcome & reflection",
-        "text": "The model and animated renders remained a personal study, with no physical production intended. Making it developed my understanding of modelling, lighting, and materials. Revisiting it now, I would improve the animation through a physics-based simulation to explore more dynamic movement."
+        "text": "The finished model and animated renders remained a personal digital study. Making them helped me learn how modelling decisions interact with lighting and materials. Revisiting it now, I would improve the animation with a physics simulation to explore more dynamic movement."
       }
     ],
-    "credits": "Musical reference: *Hyperreal Ravelord* by BEASTBOY. Independent fan project; pendant based on an existing SVG logo.",
+    "credits": "Musical reference: *Hyperreal Ravelord* by BEASTBOY. Independent fan project. The pendant is based on an existing SVG logo.",
     "editorialSource": "Projekte/Hyperreal Ravelord Kette 3D/portfolio-editorial.md"
   },
   {
     "id": 6,
     "title": "Matrix Lamp",
     "slug": "matrix-lamp",
-    "atAGlance": "Matrix Lamp is a personal gift and an exploration of electronics and fabrication. I designed and built a layered lamp around a 16 × 16 LED matrix, creating five animations for calming ambient light with AI assistance on the electronics layout and firmware. Completed over two weeks in October 2026, it worked well in use, though pressing its control knob can shift the object.",
+    "atAGlance": "I designed and built Matrix Lamp as a gift, using a 16 × 16 LED matrix to create calming ambient light. Five animations sit within a layered structure that leaves the construction visible and the parts accessible. AI tools assisted with the electronics layout and firmware. The lamp was completed in two weeks and worked well in use, though pressing its control knob can shift it.",
     "discipline": "Lamp",
     "skills": [
       "Physical computing",
@@ -494,7 +494,7 @@ window.PORTFOLIO_PROJECTS = [
       "src": "assets/matrix-lamp-hero.png",
       "width": 1086,
       "height": 1448,
-      "title": "Finished Matrix Lamp · transparent cutout",
+      "title": "Finished Matrix Lamp · background removed",
       "credit": "",
       "use": "hero",
       "source": "Final Lamp/IMG_3335.JPG → matrix-lamp-cutout.png",
@@ -506,7 +506,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/matrix-lamp-studio-rear.webp",
         "width": 1086,
         "height": 1448,
-        "title": "Rear view and metal finish",
+        "title": "Rear plate and metal finish",
         "credit": "",
         "source": "Final Lamp/IMG_3347.JPG → Studio/matrix-lamp-studio-rear.png",
         "use": "detail"
@@ -515,7 +515,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/matrix-lamp-studio-front.webp",
         "width": 1086,
         "height": 1448,
-        "title": "Front view in purple light",
+        "title": "Front view with purple light",
         "credit": "",
         "source": "Final Lamp/IMG_3333.JPG → Studio/matrix-lamp-studio-front.png",
         "use": "detail"
@@ -524,7 +524,7 @@ window.PORTFOLIO_PROJECTS = [
         "src": "assets/matrix-lamp-06.webp",
         "width": 1200,
         "height": 1600,
-        "title": "Early light and breadboard test",
+        "title": "Early LED and breadboard test",
         "credit": "",
         "use": "detail",
         "source": "IMG_3280.JPG"
@@ -541,27 +541,27 @@ window.PORTFOLIO_PROJECTS = [
     "caseStudy": [
       {
         "title": "Intention & design",
-        "text": "I wanted calming ambient light in an object whose construction remains visible. Making its parts accessible would also allow the lamp to be repaired and modified."
+        "text": "I wanted to make a lamp for calming ambient light while keeping its construction visible. Leaving the parts accessible would also make repairs and modifications possible."
       },
       {
         "title": "My role & assistance",
-        "text": "I developed the build plan, fabricated the plates, assembled the structure, soldered the components, and created the animations. AI tools assisted with the electronics layout and firmware coding."
+        "text": "I planned the build and fabricated the plates, then assembled the structure and soldered the components. I also created the animations. AI tools assisted with the electronics layout and firmware coding."
       },
       {
         "title": "Outcome & learning",
-        "text": "The lamp was completed on time and given to its recipient. It worked well as ambient lighting, while giving me practical experience in soldering, fabrication, and assembly.\n\nPressing the knob can shift the lamp because of its placement. For another version, I would choose a different control arrangement."
+        "text": "I finished the lamp on time and gave it to its recipient. It worked well as ambient lighting, and the build gave me practical experience with fabrication and soldering.\n\nPressing the control knob can shift the lamp because of where it is placed. For another version, I would choose a different control arrangement."
       },
       {
         "title": "Key design decisions",
-        "text": "I initially planned a bent aluminium enclosure, then switched to separate layers held together with threaded rods and nuts. This simplified fabrication, made the components accessible, and turned the construction itself into part of the lamp’s appearance.\n\nLearning to solder and assemble the electronics was the most experimental part of the build."
+        "text": "I initially planned a bent aluminium enclosure, then switched to separate layers held together with threaded rods and nuts. The layers were easier to fabricate and left the components accessible. They also made the construction part of the lamp’s appearance.\n\nLearning to solder and assemble the electronics involved the most experimentation."
       },
       {
         "title": "Construction & interaction",
-        "text": "Two laser-cut acrylic sheets and a metal rear plate, cut with a mechanical saw, form the layered structure.\n\nA single knob controls animation selection, colour, and brightness. Pressing it cycles between these three settings; turning it adjusts the selected setting."
+        "text": "Two laser-cut acrylic sheets form the structure with a metal rear plate cut using a mechanical saw.\n\nA single knob selects an animation and adjusts its colour and brightness. Pressing the knob cycles through these settings. Turning it adjusts the selected setting."
       },
       {
         "title": "Media presentation",
-        "text": "Four edited photographs replace the home background with a white studio setting and soft lighting. They are presentation edits, not documentation of an actual studio shoot. Original angles and lamp components were used as invariants; originals are preserved for reference."
+        "text": "Four photographs were edited to replace the home background with a white studio setting and soft lighting. They preserve the original viewing angles and lamp components. I kept the original photographs for reference. The images show presentation edits, not an actual studio shoot."
       }
     ],
     "context": "Personal gift · October 2026 · Two weeks",
