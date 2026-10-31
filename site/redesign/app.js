@@ -1,6 +1,6 @@
 import '../projects.js';
 import '../media.js';
-import { escapeHTML, routeFromHash, renderProject } from '../wireframe/content.mjs';
+import { escapeHTML, routeFromHash, renderProject } from '../wireframe/content.mjs?v=veiled-video-top-1';
 import { projectAssets, projectParts } from './project-assets.mjs?v=arduino-parts-1';
 
 const projects = projectAssets.map(asset => window.PORTFOLIO_PROJECTS.find(project => project.slug === asset.slug));

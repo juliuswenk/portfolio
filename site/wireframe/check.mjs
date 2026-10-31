@@ -34,6 +34,13 @@ for (const project of projects) {
   assert.ok(!/skill-chip|related-project|<details/.test(html));
 }
 
+const veiled = projects.find(project => project.slug === 'veiled-panopticon');
+const veiledHTML = renderProject(veiled, context.window.PORTFOLIO_MEDIA);
+assert.ok(veiledHTML.indexOf('class="project-film"') < veiledHTML.indexOf('class="project-part"'), 'Veiled Panopticon opens with its film before the model and introduction');
+assert.equal((veiledHTML.match(/<iframe /g) || []).length, 1, 'The film appears once');
+const otherFilm = renderProject({ ...veiled, slug: 'other-project' }, context.window.PORTFOLIO_MEDIA);
+assert.ok(otherFilm.indexOf('class="project-film"') > otherFilm.lastIndexOf('class="project-part"'), 'Other project films keep their existing placement');
+
 // Exercise navigation with actual event handlers, including repeated visits to the same project.
 const listeners = {}, views = new Map();
 const element = () => ({ dataset: {}, hidden: false, focus() {}, setAttribute() {}, querySelector: () => element(), replaceChildren() { this.innerHTML = ''; } });
