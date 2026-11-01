@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createXray, createXrayMaterial } from './xray.mjs';
+import { createProjectStills } from './project-stills.mjs';
 
 export function createProjectParts(model, camera, config) {
   model.updateMatrixWorld(true);
@@ -61,6 +62,7 @@ export function createProjectParts(model, camera, config) {
     return group;
   });
   const xray = createXray(highlights);
+  const stills = createProjectStills(camera);
   const homeRotation = new THREE.Quaternion();
   const size = new THREE.Vector3();
   const position = new THREE.Vector3(), scale = new THREE.Vector3(), quaternion = new THREE.Quaternion();
@@ -75,12 +77,17 @@ export function createProjectParts(model, camera, config) {
   }
   return {
     dispose() {
+      stills.clear();
       restore(); xray.dispose();
       contextMeshes.forEach(mesh => mesh.removeFromParent());
       contextMaterial.dispose();
     },
     get visible() { return opening || progress > 0; },
+    get settled() { return opening && progress === 1; },
+    get static() { return stills.visible; },
+    showStills(renderer) { return this.settled && stills.show(renderer, model, parts, stages); },
     setProject(nextStages, immediate = false) {
+      stills.clear();
       opening = Boolean(nextStages);
       if (nextStages) {
         stages = Array.from(nextStages);

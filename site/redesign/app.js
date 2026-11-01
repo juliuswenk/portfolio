@@ -38,7 +38,7 @@ function loadCollection() {
   loading.hidden = false;
   collection.inert = true;
   loadTimer = setTimeout(showFallback, 15000);
-  import('./scene.mjs?v=assembled-xray-1').then(module => module.createCollection({
+  import('./scene.mjs?v=native-scroll-1').then(module => module.createCollection({
     canvas, collection, signal: loadAbort.signal,
     isHome: () => document.body.dataset.view === 'home',
     onOpen: slug => navigate(`#/projects/${slug}`),

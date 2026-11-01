@@ -7,12 +7,19 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { createProjectParts } from './project-parts.mjs?v=assembled-xray-1';
+import { createProjectParts } from './project-parts.mjs?v=native-scroll-1';
 import { projectAssets, projectParts } from './project-assets.mjs?v=assembled-xray-1';
 import { applyCobaltScattering } from './cobalt-sss.mjs';
 const status = document.querySelector('[role="status"]');
 function assert(condition, message) { if (!condition) throw new Error(message); }
 function sameMatrix(a, b) { return a.elements.every((value, i) => Math.abs(value - b.elements[i]) < 1e-6); }
+function stageWithRect(getRect) {
+  const stage = document.createElement('div');
+  stage.hidden = true;
+  stage.getBoundingClientRect = getRect;
+  document.body.append(stage);
+  return stage;
+}
 try {
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize(400, 400);
@@ -68,7 +75,7 @@ try {
     }
     assembled();
     let scroll = 0, stageWidth = innerWidth - 40;
-    const stages = config.parts.map((_, index) => ({ getBoundingClientRect: () => ({ left: 20, top: 120 + index * 800 - scroll, width: stageWidth, height: 260 }) }));
+    const stages = config.parts.map((_, index) => stageWithRect(() => ({ left: 20, top: 120 + index * 800 - scroll, width: stageWidth, height: 260 })));
     view.setProject(stages);
     view.update(0, false); assembled();
     view.update(.425, false);
@@ -100,21 +107,39 @@ try {
       });
     }
     aligned(); render(model, camera);
+    const rendererSize = renderer.getSize(new THREE.Vector2()), pixelRatio = renderer.getPixelRatio();
+    assert(view.settled && view.showStills(renderer) && view.static, 'Settled sections use native scrolling canvases');
+    assert(renderer.getSize(new THREE.Vector2()).equals(rendererSize) && renderer.getPixelRatio() === pixelRatio && !renderer.getRenderTarget(), 'Snapshot rendering restores the shared renderer');
+    const stills = stages.map(stage => stage.querySelector('canvas'));
+    assert(stills.every(canvas => canvas && canvas.width > 0 && canvas.height > 0), 'Every section receives a rendered model');
+    assert(stills.every(canvas => {
+      const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+      return pixels.some((value, index) => index % 4 !== 3 && value > 10);
+    }), 'Section snapshots contain visible X-ray artwork');
+    assert(!shaderErrors.length, 'Snapshot shaders compile');
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
     assert(raycaster.intersectObjects(contexts, false).length === 0, 'Context never intercepts project picking');
     assert(!view.update(0, false), 'Settled reading does not keep rendering');
-    scroll = 850; view.invalidate(); view.update(0, false); aligned();
+    const frameCount = renderer.info.render.frame;
+    scroll = 850;
+    assert(view.showStills(renderer) && renderer.info.render.frame === frameCount, 'Scrolling reuses the existing images without WebGL rendering');
+    assert(stills.every((canvas, index) => canvas.parentElement === stages[index]), 'Models remain attached to their scrolling sections');
+    view.invalidate(); view.update(0, false); aligned();
     stageWidth = 280; view.invalidate(); view.update(0, false); aligned();
+    assert(view.showStills(renderer) && renderer.info.render.frame > frameCount, 'Stage resizing refreshes the images');
+    assert(stages.every(stage => stage.querySelectorAll('canvas').length === 1), 'Resizing does not accumulate image canvases');
     view.setProject(null);
-    stages.forEach(stage => { stage.getBoundingClientRect = () => { throw new Error('Return accessed detached reading DOM'); }; });
+    assert(!view.static && stages.every(stage => !stage.querySelector('canvas')), 'Returning removes snapshots and resumes live 3D');
+    stages.forEach(stage => { stage.remove(); stage.getBoundingClientRect = () => { throw new Error('Return accessed detached reading DOM'); }; });
     view.update(.425, false); render(model, camera);
     view.update(.425, false); assembled();
     assert(!view.visible, 'Return completes');
     if (config.repeat) assert(groups.filter(group => group.visible).length === 1, 'Only the original LED remains at home');
-    const fresh = config.parts.map(() => ({ getBoundingClientRect: () => ({ left: 20, top: 120, width: innerWidth - 40, height: 260 }) }));
+    const fresh = config.parts.map(() => stageWithRect(() => ({ left: 20, top: 120, width: innerWidth - 40, height: 260 })));
     view.setProject(fresh, true); view.update(0, true);
     assert(view.visible && highlights.every(mesh => mesh.material === xray), 'Direct/reduced-motion entry shows complete X-ray models immediately');
+    assert(view.showStills(renderer), 'Direct and reduced-motion entry also use native scrolling');
     view.setProject(null, true); assembled();
     view.setProject(fresh); view.update(.2, false);
     view.setProject(null); view.update(.1, false);
@@ -128,9 +153,10 @@ try {
     view.dispose(); assembled();
     assert(xrayDisposed && contextDisposed && contexts.every(mesh => !mesh.parent), 'Disposal removes faint copies and releases temporary materials');
     assert(!geometryDisposed, 'Disposal retains shared original geometry');
+    fresh.forEach(stage => stage.remove());
   }
   renderer.dispose();
-  status.textContent = 'Passed for all five projects: complete assemblies in the home-page pose, selected meshes highlighted in their exact assembled positions, no duplicate faint highlights, shared geometry, shader compilation, scrolling and narrow stages, fades, interrupted transitions, original material/shadow restoration, disposal, repeated LEDs, idle rendering and reduced motion.';
+  status.textContent = 'Passed for all five projects: native scrolling section canvases with visible X-ray artwork, no WebGL draws on scroll, renderer restoration, resize refresh, live 3D return, complete assemblies, exact selected mesh positions, home-page pose, shader compilation, fades, interrupted transitions, original material/shadow restoration, disposal, repeated LEDs and reduced motion.';
 } catch (error) {
   status.textContent = `FAILED: ${error.message}`;
   throw error;

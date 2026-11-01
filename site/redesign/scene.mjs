@@ -13,7 +13,7 @@ import { applyCobaltScattering } from './cobalt-sss.mjs';
 import { projectAssets, projectParts } from './project-assets.mjs?v=assembled-xray-1';
 import { assetFootprint, collectionLayout } from './collection-layout.mjs';
 import { setupMotion } from './motion.mjs?v=relative-tilt-2';
-import { createProjectParts } from './project-parts.mjs?v=assembled-xray-1';
+import { createProjectParts } from './project-parts.mjs?v=native-scroll-1';
 
 export async function createCollection({ canvas, collection, signal, isHome, onOpen, onFailure }) {
   signal.throwIfAborted();
@@ -145,7 +145,7 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
       needsRender = true;
     }
     function listen(target, type, handler) { target.addEventListener(type, handler, { signal: events.signal }); }
-    listen(window, 'scroll', () => readingView?.invalidate());
+    listen(window, 'scroll', () => { if (!readingView?.static) readingView?.invalidate(); });
     listen(canvas, 'pointerdown', event => {
       if (!active || readingView?.visible || resizing || !event.isPrimary || event.button !== 0 || pointer) return;
       const index = pick(event);
@@ -228,12 +228,14 @@ export async function createCollection({ canvas, collection, signal, isHome, onO
       motion.tick(now);
       const delta = Math.min((now - previous) / 1000, .05); previous = now;
       if (readingView?.visible && !document.hidden && !resizing) {
-        if (renderer.domElement.width !== Math.floor(innerWidth * renderer.getPixelRatio()) || renderer.domElement.height !== Math.floor(innerHeight * renderer.getPixelRatio())) {
+        if (!readingView.static && (renderer.domElement.width !== Math.floor(innerWidth * renderer.getPixelRatio()) || renderer.domElement.height !== Math.floor(innerHeight * renderer.getPixelRatio()))) {
           sizeViewport(innerWidth, innerHeight);
           readingView?.invalidate();
         }
         if (readingView.update(delta, reducedMotion.matches) || needsRender) {
-          composer.render(delta); needsRender = false;
+          canvas.hidden = readingView.showStills(renderer);
+          if (!canvas.hidden) composer.render(delta);
+          needsRender = false;
         }
       } else if (active && isHome() && !document.hidden && !resizing) {
         if (resizePending && !pointer) { resizePending = false; resize().catch(onFailure); }
